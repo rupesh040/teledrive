@@ -61,3 +61,5 @@ Telegram credentials are entered **through the login page in the web app** — n
 ## Security
 
 This repository is safe to publish: secrets (`.env`, `teledrive.db`, Telegram session) are excluded via `.gitignore` and are never committed.
+<img width="957" height="441" alt="td-grid" src="https://github.com/user-attachments/assets/6f8f7d06-f214-497c-9e25-23089e499bfe" />
+<img width="959" height="432" alt="td-list" src="https://github.com/user-attachments/assets/ab825d2f-850d-48fd-add3-dd30044d162f" />
