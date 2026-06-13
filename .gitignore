@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.db
+*.log
+
+# all documentation/markdown — do not upload (except README)
+*.md
+!README.md
