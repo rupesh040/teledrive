@@ -10,4 +10,8 @@ const telegramLogin = makeReturningLoginFlow({
   issueToken: tokenStore.issueToken,
 });
 
-export const authRouter = createAuthRouter({ repo: appConfigRepo, telegramLogin });
+export const authRouter = createAuthRouter({
+  repo: appConfigRepo,
+  telegramLogin,
+  ephemeralStorage: process.env.EPHEMERAL_STORAGE === 'true',
+});

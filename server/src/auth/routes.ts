@@ -14,12 +14,13 @@ interface AuthDependencies {
   tokens?: TokenStore;
   now?: () => number;
   telegramLogin?: ReturningLoginFlow;
+  ephemeralStorage?: boolean;
 }
 const MAX_FAILURES = 5;
 const COOLDOWN_MS = 30_000;
 const ATTEMPT_WINDOW_MS = 5 * 60_000;
 
-export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, telegramLogin }: AuthDependencies) {
+export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, telegramLogin, ephemeralStorage = false }: AuthDependencies) {
   const router = Router();
   const failures = new Map<string, { count: number; expiresAt: number; blockedUntil: number }>();
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
@@ -32,6 +33,7 @@ export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, te
       authenticated,
       configured,
       account: account ? { name: account.account_name, phone: account.account_phone } : null,
+      ...(ephemeralStorage ? { ephemeralStorage: true } : {}),
     });
   });
 

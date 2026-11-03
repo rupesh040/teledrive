@@ -2,7 +2,7 @@
 
 A personal file manager powered by **Telegram Cloud**, with a Material Design 3 interface. Organize folders, upload, download, preview, and search while the actual files live in your own Telegram account in a private channel.
 
-Run it locally or deploy the full app to Render with persistent SQLite storage.
+Run it locally or deploy the full app to Render. The supplied free Render configuration uses temporary SQLite storage.
 
 ## Tech stack
 
@@ -68,10 +68,12 @@ The root [render.yaml](render.yaml) and [Dockerfile](Dockerfile) deploy the fron
 
 1. Push the completed project to a GitHub repository you own.
 2. In Render, create a Blueprint from that repository and select your workspace.
-3. Review the paid `0.5c-512mb` compute plan and 1 GB persistent disk before applying. SQLite requires a persistent disk, which Render does not support on free web services. See [Render's disk documentation](https://render.com/docs/disks) and [current pricing](https://render.com/pricing).
+3. The supplied Blueprint uses Render's free plan with `DB_PATH=/tmp/teledrive.db`. Account settings and file metadata reset when the service restarts or redeploys. Files already uploaded to Telegram remain in Telegram, but this temporary configuration does not preserve their TeleDrive index. See [Render's free service limits](https://render.com/docs/free).
 4. Deploy, then open the resulting HTTPS URL and complete Telegram setup on that hosted instance. Your local database and credentials are excluded from the Docker build and are not uploaded automatically.
 
-The disk mounts at `/data`; `DB_PATH=/data/teledrive.db` keeps account settings and file metadata across redeploys. Files remain in Telegram. Use one service instance because browser sessions, login challenges, and the Telegram client stay in process memory. A restart signs browsers out while preserving the saved drive connection.
+For persistent hosting, upgrade to a paid compute plan, attach a disk at `/data`, set `DB_PATH=/data/teledrive.db`, and set `EPHEMERAL_STORAGE=false`. Render supports persistent disks on paid services. See [Render's disk documentation](https://render.com/docs/disks) and [current pricing](https://render.com/pricing).
+
+Use one service instance because browser sessions, login challenges, and the Telegram client stay in process memory. A restart always signs browsers out. With a persistent disk, it preserves the saved drive connection; on the free plan, it also resets setup and the file index.
 
 For a local production preview, first build `web`, then run the backend with `WEB_DIST_PATH` set to the absolute path of `web/dist`. Normal development still uses Vite.
 

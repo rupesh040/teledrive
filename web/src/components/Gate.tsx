@@ -8,6 +8,7 @@ import { Onboarding } from './onboarding/Onboarding.js';
 import { LockScreen } from './LockScreen.js';
 import { AuthLayout, AuthSpinner, CloudMark } from './AuthLayout.js';
 import { MaterialButton } from './material/MaterialButton.js';
+import { setEphemeralStorage } from './HostingNotice.js';
 
 export function Gate() {
   const { t, lang } = useT();
@@ -27,6 +28,7 @@ export function Gate() {
       const session = await api.authSession();
       // A sign-out, new login, or completed setup supersedes older responses.
       if (requestGeneration !== generation.current || token !== getToken()) return;
+      setEphemeralStorage(session.ephemeralStorage === true);
       setStatus({ configured: session.configured, account: session.account });
       setAuthenticated(session.authenticated);
       setChecking(false);

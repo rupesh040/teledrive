@@ -43,4 +43,5 @@ export interface SetupStatus {
 
 export interface AuthSession extends SetupStatus {
   authenticated: boolean;
+  ephemeralStorage?: boolean;
 }

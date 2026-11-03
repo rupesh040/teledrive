@@ -3,6 +3,7 @@ import { useT } from '../i18n/lang.js';
 import { LangToggle } from './LangToggle.js';
 import { ThemeToggle } from '../theme/ThemeToggle.js';
 import { InstallApp } from '../pwa/InstallApp.js';
+import { HostingNotice } from './HostingNotice.js';
 import './auth.css';
 
 export function CloudMark({ size = 28 }: { size?: number }) {
@@ -19,6 +20,7 @@ export function AuthLayout({ children, compact = false }: { children: ReactNode;
         <InstallApp className="auth-install-button" />
         <div className="auth-header-actions"><ThemeToggle /><LangToggle /></div>
       </header>
+      <HostingNotice />
       <main className="auth-main">
         {!compact && <section className="auth-story" aria-labelledby="auth-story-title">
           <span className="auth-eyebrow"><span />{en ? 'A PERSONAL SPACE FOR YOUR FILES' : 'RUANG PRIBADI UNTUK FILE ANDA'}</span>

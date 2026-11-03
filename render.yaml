@@ -1,10 +1,10 @@
-# SQLite metadata and the Telegram connection require this persistent disk.
-# This configuration uses a paid web service; review Render's current pricing before applying.
+# Free preview: SQLite account settings and file metadata reset on service restarts.
+# Files already uploaded to Telegram remain in Telegram.
 services:
   - type: web
     name: teledrive
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -16,10 +16,8 @@ services:
       - key: PORT
         value: "10000"
       - key: DB_PATH
-        value: /data/teledrive.db
+        value: /tmp/teledrive.db
       - key: WEB_DIST_PATH
         value: /app/web/dist
-    disk:
-      name: teledrive-data
-      mountPath: /data
-      sizeGB: 1
+      - key: EPHEMERAL_STORAGE
+        value: "true"
