@@ -24,6 +24,7 @@ export interface Stats {
 
 export type SortKey = 'name' | 'date' | 'size';
 export type SortDir = 'asc' | 'desc';
+export type DriveRoute = 'drive' | 'recent' | 'images' | 'documents' | 'trash';
 
 export type ItemKind = 'file' | 'folder';
 
@@ -38,4 +39,8 @@ export const selKey = (kind: ItemKind, id: number): string => `${kind}:${id}`;
 export interface SetupStatus {
   configured: boolean;
   account: { name: string | null; phone: string | null } | null;
+}
+
+export interface AuthSession extends SetupStatus {
+  authenticated: boolean;
 }

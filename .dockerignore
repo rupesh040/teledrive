@@ -1,0 +1,15 @@
+.git
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+**/*.db
+**/*.db-*
+**/*.sqlite*
+**/*.log
+**/tests
+**/.vercel
+td-grid.png
+td-list.png
+server/.qa-*

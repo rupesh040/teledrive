@@ -1,17 +1,13 @@
-import { Router } from 'express';
 import { appConfigRepo } from '../telegram/runtimeLogin.js';
-import { issueToken } from '../auth/tokens.js';
+import { createAuthRouter } from '../auth/routes.js';
+import { makeReturningLoginFlow } from '../telegram/returningLogin.js';
+import { makeGramClient } from '../telegram/gramjsLogin.js';
+import { tokenStore } from '../auth/tokens.js';
 
-export const authRouter = Router();
-
-// Unlock with PIN → issue a token. Only when already configured.
-authRouter.post('/unlock', (req, res) => {
-  if (!appConfigRepo.isConfigured()) {
-    return res.status(400).json({ error: 'Not configured yet.' });
-  }
-  const { pin } = req.body as { pin: string };
-  if (!appConfigRepo.verifyPin(String(pin ?? ''))) {
-    return res.status(401).json({ error: 'Incorrect PIN.' });
-  }
-  res.json({ token: issueToken() });
+const telegramLogin = makeReturningLoginFlow({
+  repo: appConfigRepo,
+  makeClient: (apiId, apiHash) => makeGramClient(apiId, apiHash, { floodSleepThreshold: 0 }),
+  issueToken: tokenStore.issueToken,
 });
+
+export const authRouter = createAuthRouter({ repo: appConfigRepo, telegramLogin });

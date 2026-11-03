@@ -21,6 +21,9 @@ export interface NewFile {
 
 export function makeFileRepo(db: DB) {
   return {
+    listAll(): FileRow[] {
+      return db.prepare('SELECT * FROM files WHERE deleted_at IS NULL ORDER BY created_at DESC').all() as unknown as FileRow[];
+    },
     create(f: NewFile): FileRow {
       const now = new Date().toISOString();
       const info = db

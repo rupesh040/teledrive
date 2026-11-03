@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react';
 import { useT } from '../i18n/lang.js';
-import { IconX, IconCheck } from './icons.js';
+import { IconX, IconCheck, IconUpload, IconChevron } from './icons.js';
+import './support-flows.css';
 
 export interface UploadItem {
   id: number;
   name: string;
-  progress: number; // 0..100
+  progress: number;
   status: 'uploading' | 'done' | 'error';
 }
 
@@ -14,39 +16,38 @@ interface Props {
 }
 
 export function UploadQueue({ items, onClose }: Props) {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => { if (items.length === 0) setCollapsed(false); }, [items.length]);
   if (items.length === 0) return null;
-
-  const active = items.filter((i) => i.status === 'uploading').length;
+  const active = items.filter((item) => item.status === 'uploading').length;
+  const completed = items.filter((item) => item.status === 'done').length;
+  const failed = items.filter((item) => item.status === 'error').length;
+  const heading = active > 0 ? `${t('uploading')} (${active})` : failed > 0
+    ? (lang === 'en' ? 'Some uploads need attention' : 'Beberapa unggahan gagal')
+    : (lang === 'en' ? 'Uploads complete' : 'Unggahan selesai');
+  const toggleLabel = collapsed ? (lang === 'en' ? 'Expand uploads' : 'Perluas unggahan') : (lang === 'en' ? 'Minimize uploads' : 'Perkecil unggahan');
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-80 max-w-[92vw] bg-panel border border-line rounded-2xl shadow-lift overflow-hidden">
-      <div className="px-4 py-3 border-b border-line flex items-center justify-between">
-        <span className="text-sm font-medium text-content">
-          {active > 0 ? `${t('uploading')} (${active})` : t('upload')}
-        </span>
-        <button onClick={onClose} className="grid place-items-center w-7 h-7 rounded-lg text-muted hover:text-content hover:bg-ink/70 transition">
-          <IconX size={16} />
-        </button>
-      </div>
-      <div className="max-h-64 overflow-y-auto p-2 flex flex-col gap-1.5">
-        {items.map((it) => (
-          <div key={it.id} className="px-2 py-1.5">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="flex-1 truncate text-sm text-content">{it.name}</span>
-              {it.status === 'done' && <span className="text-accent"><IconCheck size={15} /></span>}
-              {it.status === 'error' && <span className="text-xs text-[#e0584c]">!</span>}
-              {it.status === 'uploading' && <span className="text-xs text-faint">{it.progress}%</span>}
-            </div>
-            <div className="h-1.5 rounded-full bg-ink overflow-hidden border border-line">
-              <div
-                className={`h-full rounded-full transition-all duration-200 ${it.status === 'error' ? 'bg-[#e0584c]' : 'bg-gradient-to-r from-accent-2 to-accent'}`}
-                style={{ width: `${it.status === 'done' ? 100 : it.progress}%` }}
-              />
-            </div>
+    <section className="upload-panel" aria-label={lang === 'en' ? 'File transfers' : 'Transfer file'}>
+      <header className="upload-panel-header">
+        <span className="upload-panel-symbol"><IconUpload size={19} /></span>
+        <div><h2 role="status" aria-live="polite">{heading}</h2><p>{completed} / {items.length} {lang === 'en' ? 'files complete' : 'file selesai'}</p></div>
+        <button onClick={() => setCollapsed((value) => !value)} className={`support-icon-button upload-toggle ${collapsed ? 'is-collapsed' : ''}`} title={toggleLabel} aria-label={toggleLabel} aria-expanded={!collapsed}><IconChevron size={16} /></button>
+        {active === 0 && <button onClick={onClose} className="support-icon-button" title={lang === 'en' ? 'Dismiss transfers' : 'Tutup transfer'} aria-label={lang === 'en' ? 'Dismiss transfers' : 'Tutup transfer'}><IconX size={17} /></button>}
+      </header>
+      <div className={`upload-panel-collapse ${collapsed ? 'is-collapsed' : ''}`} aria-hidden={collapsed}><div className="upload-panel-items"><div className="upload-panel-scroll">{items.map((item) => {
+        const progress = Math.min(100, Math.max(0, item.progress));
+        return <div key={item.id} className={`upload-transfer upload-transfer-${item.status}`}>
+          <div className="upload-transfer-label"><span title={item.name}>{item.name}</span>
+            {item.status === 'done' ? <span className="upload-success" title={lang === 'en' ? 'Complete' : 'Selesai'}><IconCheck size={16} /></span>
+              : item.status === 'error' ? <span className="upload-failed-label">{lang === 'en' ? 'Failed' : 'Gagal'}</span>
+              : <small>{progress === 100 ? (lang === 'en' ? 'Saving…' : 'Menyimpan…') : `${progress}%`}</small>}
           </div>
-        ))}
-      </div>
-    </div>
+          <div className="upload-progress-track" role="progressbar" aria-label={item.name} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-valuetext={item.status === 'error' ? (lang === 'en' ? 'Upload failed' : 'Unggahan gagal') : item.status === 'done' ? (lang === 'en' ? 'Complete' : 'Selesai') : `${progress}%`}><div style={{ width: `${item.status === 'done' ? 100 : progress}%` }} /></div>
+          {item.status === 'error' && <p>{lang === 'en' ? 'Upload this file again to retry.' : 'Unggah file ini lagi untuk mencoba kembali.'}</p>}
+        </div>;
+      })}</div></div></div>
+    </section>
   );
 }

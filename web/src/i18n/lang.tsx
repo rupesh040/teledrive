@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { STRINGS, type Lang, type StringKey } from './strings.js';
 
 interface LangCtx {
@@ -10,20 +10,21 @@ interface LangCtx {
 const Ctx = createContext<LangCtx | null>(null);
 const STORAGE_KEY = 'td-lang';
 
-// Initial language: from localStorage if valid, otherwise default to Indonesian.
+// Preserve the user's choice; otherwise follow the browser language.
 // Wrapped in try/catch because localStorage can throw when storage is blocked
 // (strict privacy mode / certain WebViews) — the app still runs with the default.
 function initialLang(): Lang {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'en' || saved === 'id' ? saved : 'id';
+    return saved === 'en' || saved === 'id' ? saved : navigator.language.startsWith('id') ? 'id' : 'en';
   } catch {
-    return 'id';
+    return 'en';
   }
 }
 
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initialLang);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

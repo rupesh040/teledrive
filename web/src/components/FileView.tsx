@@ -4,11 +4,11 @@ import type { DragItem } from '../lib/dnd.js';
 import { useT } from '../i18n/lang.js';
 import { ItemCard } from './ItemCard.js';
 import { ItemRow } from './ItemRow.js';
+import { FolderGlyph } from './Glyph.js';
+import './file-view.css';
 
 interface Props {
-  view: 'grid' | 'list';
-  folders: FolderItem[];
-  files: FileItem[];
+  view: 'grid' | 'list'; folders: FolderItem[]; files: FileItem[];
   onOpenFolder: (id: number) => void;
   onPreview: (file: FileItem) => void;
   onRenameFolder: (id: number) => void;
@@ -23,51 +23,39 @@ interface Props {
   onToggleSelect: (kind: ItemKind, id: number) => void;
 }
 
-export function FileView({
-  view, folders, files, onOpenFolder, onPreview,
-  onRenameFolder, onRenameFile, onDeleteFolder, onDeleteFile, onMoveFolder, onMoveFile, onMoveByDrag, onUploadToFolder,
-  selected, onToggleSelect,
-}: Props) {
-  const { t } = useT();
+export function FileView({ view, folders, files, onOpenFolder, onPreview, onRenameFolder, onRenameFile, onDeleteFolder, onDeleteFile, onMoveFolder, onMoveFile, onMoveByDrag, onUploadToFolder, selected, onToggleSelect }: Props) {
+  const { t, lang } = useT();
   const selActive = selected.size > 0;
-  if (folders.length === 0 && files.length === 0) {
-    return (
-      <div className="grid place-items-center py-24 text-center">
-        <div className="w-16 h-16 rounded-2xl border border-line bg-panel/60 grid place-items-center mb-4 text-3xl">📭</div>
-        <p className="font-display text-2xl text-content">{t('emptyTitle')}</p>
-        <p className="text-sm text-muted mt-1.5">{t('emptyHint')}</p>
-      </div>
-    );
-  }
+  const folderProps = (folder: FolderItem) => ({ kind: 'folder' as const, folder, onOpen: onOpenFolder, onRename: onRenameFolder, onDelete: onDeleteFolder, onMove: onMoveFolder, onMoveByDrag, onUploadToFolder, selected: selected.has(selKey('folder', folder.id)), selectionActive: selActive, onToggleSelect: () => onToggleSelect('folder', folder.id) });
+  const fileProps = (file: FileItem) => ({ kind: 'file' as const, file, onPreview, onRename: onRenameFile, onDelete: onDeleteFile, onMove: onMoveFile, onMoveByDrag, selected: selected.has(selKey('file', file.id)), selectionActive: selActive, onToggleSelect: () => onToggleSelect('file', file.id) });
 
-  if (view === 'grid') {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3.5">
-        {folders.map((f, i) => (
-          <ItemCard key={`d${f.id}`} kind="folder" folder={f} index={i} onOpen={onOpenFolder} onRename={onRenameFolder} onDelete={onDeleteFolder} onMove={onMoveFolder} onMoveByDrag={onMoveByDrag} onUploadToFolder={onUploadToFolder} selected={selected.has(selKey('folder', f.id))} selectionActive={selActive} onToggleSelect={() => onToggleSelect('folder', f.id)} />
-        ))}
-        {files.map((f, i) => (
-          <ItemCard key={`f${f.id}`} kind="file" file={f} index={folders.length + i} onPreview={onPreview} onRename={onRenameFile} onDelete={onDeleteFile} onMove={onMoveFile} onMoveByDrag={onMoveByDrag} selected={selected.has(selKey('file', f.id))} selectionActive={selActive} onToggleSelect={() => onToggleSelect('file', f.id)} />
-        ))}
-      </div>
-    );
-  }
+  if (!folders.length && !files.length) return (
+    <div className="file-empty">
+      <div className="file-empty-art"><FolderGlyph size={78} /><span className="file-empty-plus">+</span></div>
+      <h3>{t('emptyTitle')}</h3>
+      <p>{t('emptyHint')}</p>
+      <span className="file-empty-drop">{lang === 'id' ? 'Atau seret dan lepaskan file di sini' : 'Or drag and drop your files here'}</span>
+    </div>
+  );
+
+  if (view === 'grid') return (
+    <div className="file-library">
+      {!!folders.length && <section aria-label={lang === 'id' ? 'Folder' : 'Folders'}>
+        <div className="file-section-heading"><h3>{lang === 'id' ? 'Folder' : 'Folders'}</h3><span>{folders.length}</span></div>
+        <div className="folder-grid">{folders.map((folder, index) => <ItemCard key={`d${folder.id}`} {...folderProps(folder)} index={index} />)}</div>
+      </section>}
+      {!!files.length && <section aria-label={lang === 'id' ? 'File' : 'Files'}>
+        <div className="file-section-heading"><h3>{lang === 'id' ? 'File' : 'Files'}</h3><span>{files.length}</span></div>
+        <div className="document-grid">{files.map((file, index) => <ItemCard key={`f${file.id}`} {...fileProps(file)} index={index} />)}</div>
+      </section>}
+    </div>
+  );
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-3 px-3 pb-2 text-[11px] uppercase tracking-[0.16em] text-faint border-b border-line mb-1">
-        <span className="w-[30px]" />
-        <span className="flex-1">{t('sortName')}</span>
-        <span className="w-28 text-right hidden md:block">{t('sortDate')}</span>
-        <span className="w-20 text-right">{t('sortSize')}</span>
-        <span className="w-[148px]" />
-      </div>
-      {folders.map((f) => (
-        <ItemRow key={`d${f.id}`} kind="folder" folder={f} onOpen={onOpenFolder} onRename={onRenameFolder} onDelete={onDeleteFolder} onMove={onMoveFolder} onMoveByDrag={onMoveByDrag} onUploadToFolder={onUploadToFolder} selected={selected.has(selKey('folder', f.id))} selectionActive={selActive} onToggleSelect={() => onToggleSelect('folder', f.id)} />
-      ))}
-      {files.map((f) => (
-        <ItemRow key={`f${f.id}`} kind="file" file={f} onPreview={onPreview} onRename={onRenameFile} onDelete={onDeleteFile} onMove={onMoveFile} onMoveByDrag={onMoveByDrag} selected={selected.has(selKey('file', f.id))} selectionActive={selActive} onToggleSelect={() => onToggleSelect('file', f.id)} />
-      ))}
+    <div className="file-list" aria-label={lang === 'id' ? 'File dan folder' : 'Files and folders'}>
+      <div className="file-list-heading" aria-hidden="true"><span /><span>{t('sortName')}</span><span className="file-row-date">{t('sortDate')}</span><span className="file-row-type">{lang === 'id' ? 'Jenis' : 'Kind'}</span><span className="file-row-size">{t('sortSize')}</span><span /></div>
+      {folders.map((folder) => <ItemRow key={`d${folder.id}`} {...folderProps(folder)} />)}
+      {files.map((file) => <ItemRow key={`f${file.id}`} {...fileProps(file)} />)}
     </div>
   );
 }

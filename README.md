@@ -1,13 +1,13 @@
 # 📦 TeleDrive
 
-A personal Google Drive powered by **Telegram Cloud** — it looks and works like Google Drive (folders, upload, download, preview, search), but the actual files live in your own Telegram account (a private channel) used as a free "hard disk".
+A personal file manager powered by **Telegram Cloud**, with a Material Design 3 interface. Organize folders, upload, download, preview, and search while the actual files live in your own Telegram account in a private channel.
 
-Runs **100% locally** on your machine. It only needs the internet to talk to Telegram.
+Run it locally or deploy the full app to Render with persistent SQLite storage.
 
 ## Tech stack
 
 - **Backend:** Node.js + TypeScript + Express + GramJS (MTProto). SQLite via Node's built-in **`node:sqlite`** (no native compilation).
-- **Frontend:** React + Vite + TypeScript + Tailwind CSS — modern dark theme with sidebar, search, thumbnails, and a grid/list toggle. Bilingual UI (English / Indonesian).
+- **Frontend:** React + Vite + TypeScript + Tailwind CSS and Google's **Material Web** controls. Material Color Utilities generate coordinated light/dark palettes; Roboto fonts are bundled locally. Responsive layouts, file thumbnails, and saved grid/list preferences. Bilingual UI (English / Indonesian), following your browser language by default.
 
 ## Project structure
 
@@ -40,6 +40,10 @@ Telegram credentials are entered **through the login page in the web app** — n
    ```
 3. Open http://localhost:5173 and follow the onboarding wizard: enter your **API ID & API Hash** (from https://my.telegram.org) and phone number → OTP → 2FA (if enabled) → set an app **PIN**. The "TeleDrive Storage" channel is created automatically.
 
+After setup, sign in using the **same Telegram phone number**, including its country code, and the verification code Telegram sends. If two-step verification is enabled, enter your Telegram password when prompted. Returning users do not need to re-enter the API ID or API Hash. The existing app PIN is also available as an alternative sign-in method.
+
+Sign out ends only the current browser session; it preserves the connected Telegram account, PIN, storage channel, and files. Ordinary sessions use this tab's session storage and expire after 12 hours. **Remember this device** uses local storage and extends the session to seven days. Restarting the backend invalidates all browser sessions.
+
 ## Scripts
 
 | Location | Command | Purpose |
@@ -50,18 +54,45 @@ Telegram credentials are entered **through the login page in the web app** — n
 | server   | `npm run mkchannel` | (optional) Create channel → save id to DB |
 | web      | `npm run dev`       | Run the frontend |
 | web      | `npm run build`     | Production build |
+| web      | `npm run theme:generate` | Regenerate Material 3 light/dark color tokens |
+
+## Install the app
+
+Use **Install app** on the login page or in the drive sidebar. Chrome and Edge can open the native installation prompt. Other browsers show installation instructions, including Safari's Add to Home Screen / Add to Dock.
+
+The production build includes a web manifest, normal and maskable icons, and a versioned service worker. Only the public app shell and static assets are cached. Login responses, API calls, private file contents, and URLs containing tokens are never cached by the worker. Telegram login and file transfers still require a connection. Updates become active after existing app windows close so transfers are not interrupted.
+
+## Deploy to Render
+
+The root [render.yaml](render.yaml) and [Dockerfile](Dockerfile) deploy the frontend and backend together as one web service. The `/api/health` endpoint is used for health checks.
+
+1. Push the completed project to a GitHub repository you own.
+2. In Render, create a Blueprint from that repository and select your workspace.
+3. Review the paid `0.5c-512mb` compute plan and 1 GB persistent disk before applying. SQLite requires a persistent disk, which Render does not support on free web services. See [Render's disk documentation](https://render.com/docs/disks) and [current pricing](https://render.com/pricing).
+4. Deploy, then open the resulting HTTPS URL and complete Telegram setup on that hosted instance. Your local database and credentials are excluded from the Docker build and are not uploaded automatically.
+
+The disk mounts at `/data`; `DB_PATH=/data/teledrive.db` keeps account settings and file metadata across redeploys. Files remain in Telegram. Use one service instance because browser sessions, login challenges, and the Telegram client stay in process memory. A restart signs browsers out while preserving the saved drive connection.
+
+For a local production preview, first build `web`, then run the backend with `WEB_DIST_PATH` set to the absolute path of `web/dist`. Normal development still uses Vite.
 
 ## Notes
+
+- Choose **Light**, **Dark**, or **System** under Appearance in the sidebar or on the login screen. The toolbar also provides a quick light/dark toggle. Appearance persists across reloads and System mode follows operating-system changes.
+- Material buttons and ripple state layers use the official Material Web components. Page, dialog, transfer-panel, and theme transitions honor reduced-motion preferences.
+
+- Browse **Recents**, **Photos & images**, and **Documents** across all folders, or search your entire drive instantly.
+- Upload multiple files using the upload button or drag and drop. Both use the same transfer queue, with progress and failure feedback.
+- Create, rename, move, and trash items using accessible dialogs and keyboard-friendly action menus. Press `/` to search and `Escape` to dismiss a dialog.
+- Storage totals reflect actual file metadata; the UI does not impose or display an invented quota.
 
 - Files are stored as messages in a private channel named **"TeleDrive Storage"**.
 - Size limit: 2 GB per file (4 GB on Telegram Premium).
 - Telegram credentials and your PIN are stored in SQLite (`teledrive.db`), which is **git-ignored** — never commit it.
+- The PIN is stored as a salted hash. Returning Telegram verification uses a temporary connection and checks that the verified account matches the connected drive. Login challenges expire after five minutes, and code requests and incorrect attempts are rate limited.
 - For reasonable personal use only. Telegram may remove content that violates its Terms of Service, so don't rely on this as your only backup for important data.
+
+If port 3000 is already occupied, set `PORT` before starting the server, then set `TELEDRIVE_API_URL` to that server URL before starting Vite. For example, in PowerShell use `$env:PORT='3002'` in the server terminal and `$env:TELEDRIVE_API_URL='http://localhost:3002'` in the frontend terminal.
 
 ## Security
 
 This repository is safe to publish: secrets (`.env`, `teledrive.db`, Telegram session) are excluded via `.gitignore` and are never committed.
-
-
-<img width="957" height="441" alt="td-grid" src="https://github.com/user-attachments/assets/6f8f7d06-f214-497c-9e25-23089e499bfe" />
-<img width="959" height="432" alt="td-list" src="https://github.com/user-attachments/assets/ab825d2f-850d-48fd-add3-dd30044d162f" />

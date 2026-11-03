@@ -9,6 +9,9 @@ const repo = makeFileRepo(db);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 * 1024 } });
 export const filesRouter = Router();
 
+// Metadata for drive-wide collections. Contents require an explicit preview/download.
+filesRouter.get('/all', (_req, res) => res.json(repo.listAll()));
+
 // GET /api/files?folder=ID
 filesRouter.get('/', (req, res) => {
   const folder = req.query.folder ? Number(req.query.folder) : null;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SetupStatus } from '../types.js';
 import { api } from '../api/client.js';
 import { getToken, clearToken, onLocked } from '../api/auth.js';
@@ -6,37 +6,69 @@ import { useT } from '../i18n/lang.js';
 import { App } from '../App.js';
 import { Onboarding } from './onboarding/Onboarding.js';
 import { LockScreen } from './LockScreen.js';
-
-type Screen = 'loading' | 'onboarding' | 'locked' | 'app';
+import { AuthLayout, AuthSpinner, CloudMark } from './AuthLayout.js';
+import { MaterialButton } from './material/MaterialButton.js';
 
 export function Gate() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [status, setStatus] = useState<SetupStatus | null>(null);
-  const [hasToken, setHasToken] = useState<boolean>(!!getToken());
+  const [authenticated, setAuthenticated] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [error, setError] = useState(false);
+  const [accountReady, setAccountReady] = useState(false);
+  const generation = useRef(0);
 
   const refresh = useCallback(async () => {
-    const s = await api.setupStatus();
-    setStatus(s);
+    const requestGeneration = ++generation.current;
+    const token = getToken();
+    setChecking(true);
+    setError(false);
+    try {
+      const session = await api.authSession();
+      // A sign-out, new login, or completed setup supersedes older responses.
+      if (requestGeneration !== generation.current || token !== getToken()) return;
+      setStatus({ configured: session.configured, account: session.account });
+      setAuthenticated(session.authenticated);
+      setChecking(false);
+      if (!session.authenticated && token) clearToken(token);
+    } catch {
+      if (requestGeneration !== generation.current || token !== getToken()) return;
+      setError(true);
+      setChecking(false);
+    }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
-  // Saat 401 global → buang token → tampilkan LockScreen.
-  useEffect(() => onLocked(() => setHasToken(false)), []);
+  useEffect(() => {
+    const unsubscribe = onLocked(() => {
+      generation.current++;
+      setAuthenticated(false);
+      setChecking(false);
+      setStatus(previous => previous ? { ...previous, account: null } : previous);
+    });
+    void refresh();
+    return () => { generation.current++; unsubscribe(); };
+  }, [refresh]);
 
-  let screen: Screen = 'loading';
-  if (status) {
-    if (!status.configured) screen = 'onboarding';
-    else screen = hasToken ? 'app' : 'locked';
+  if (checking || !status || error) {
+    return <AuthLayout compact><div className="auth-status"><span className="auth-brand-mark"><CloudMark size={35} /></span>{error ? <><h1 className="auth-form-title">{lang === 'en' ? 'A little connection trouble.' : 'Ada kendala koneksi.'}</h1><p>{lang === 'en' ? 'Start the TeleDrive server, then try again.' : 'Jalankan server TeleDrive, lalu coba lagi.'}</p><MaterialButton className="auth-submit" onClick={refresh}>{lang === 'en' ? 'Try again' : 'Coba lagi'}</MaterialButton></> : <><AuthSpinner /><span role="status">{t('loadingApp')}</span></>}</div></AuthLayout>;
   }
-
-  if (screen === 'loading') {
-    return <div className="h-screen grid place-items-center text-muted">{t('loadingApp')}</div>;
+  if (!status.configured) {
+    return <Onboarding onDone={() => {
+      generation.current++;
+      setAuthenticated(false);
+      setStatus({ configured: true, account: null });
+      setAccountReady(true);
+      setError(false);
+    }} />;
   }
-  if (screen === 'onboarding') {
-    return <Onboarding onDone={() => { setHasToken(true); refresh(); }} />;
+  if (!authenticated) {
+    return <LockScreen accountReady={accountReady} onUnlocked={() => { setAccountReady(false); void refresh(); }} />;
   }
-  if (screen === 'locked') {
-    return <LockScreen onUnlocked={() => setHasToken(true)} />;
-  }
-  return <App onLoggedOut={() => { clearToken(); setHasToken(false); refresh(); }} />;
+  return <App onLoggedOut={() => {
+    generation.current++;
+    setAuthenticated(false);
+    setChecking(false);
+    setStatus({ configured: true, account: null });
+    setAccountReady(false);
+  }} />;
 }

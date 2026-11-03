@@ -11,6 +11,7 @@ export const config = {
   channelId: process.env.TG_CHANNEL_ID ?? '',
   port: Number(process.env.PORT ?? 3000),
   dbPath: process.env.DB_PATH ?? './teledrive.db',
+  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? '').split(',').map(origin => origin.trim()).filter(Boolean),
 };
 
 export function assertTelegramConfig(): void {

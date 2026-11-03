@@ -1,34 +1,58 @@
-import { useEffect, useState } from 'react';
-import type { SetupStatus } from '../types.js';
-import { api } from '../api/client.js';
-import { clearToken } from '../api/auth.js';
-import { useT } from '../i18n/lang.js';
+import { useEffect, useState } from "react";
+import type { SetupStatus } from "../types.js";
+import { api } from "../api/client.js";
+import { clearToken, getToken } from "../api/auth.js";
+import { useT } from "../i18n/lang.js";
+import { AppIcon } from "./Brand.js";
 
 export function AccountMenu({ onLoggedOut }: { onLoggedOut?: () => void }) {
   const { t } = useT();
-  const [account, setAccount] = useState<SetupStatus['account']>(null);
-
-  useEffect(() => { api.setupStatus().then((s) => setAccount(s.account)).catch(() => {}); }, []);
-
+  const [account, setAccount] = useState<SetupStatus["account"]>(null);
+  const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    api
+      .authSession()
+      .then((s) => setAccount(s.account))
+      .catch(() => {});
+  }, []);
   async function logout() {
-    if (!confirm(t('confirmLogout'))) return;
-    try { await api.logout(); } catch { /* tetap lanjut bersihkan lokal */ }
-    clearToken();
-    onLoggedOut?.();
+    if (busy) return;
+    const token = getToken();
+    setBusy(true);
+    setError(false);
+    try {
+      await api.logout();
+      if (clearToken(token)) onLoggedOut?.();
+    } catch {
+      setError(true);
+      setBusy(false);
+    }
   }
-
+  const name = account?.name || t("personalAccount");
   return (
-    <div className="rounded-2xl border border-line bg-panel/60 p-4 flex flex-col gap-2">
-      {account && (
-        <div className="leading-tight">
-          <div className="text-sm text-content font-medium truncate">{account.name}</div>
-          <div className="text-[11px] text-faint truncate">{account.phone}</div>
-        </div>
+    <div className="account-area">
+      {error && (
+        <p className="account-error" role="alert">
+          {t("signOutError")}
+        </p>
       )}
-      <button
-        onClick={logout}
-        className="text-left text-xs text-muted hover:text-[#e0584c] transition"
-      >{t('logout')}</button>
+      <div className="account-profile">
+        <span className="account-avatar">{name.charAt(0).toUpperCase()}</span>
+        <div>
+          <strong>{name}</strong>
+          <small>{t("personalAccount")}</small>
+        </div>
+        <button
+          className="icon-button"
+          aria-label={t("logout")}
+          title={t("logout")}
+          onClick={logout}
+          disabled={busy}
+        >
+          <AppIcon name="logout" size={18} />
+        </button>
+      </div>
     </div>
   );
 }

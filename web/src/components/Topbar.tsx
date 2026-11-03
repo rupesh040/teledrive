@@ -1,85 +1,153 @@
-import type { SortKey, SortDir } from '../types.js';
-import { UploadButton } from './UploadButton.js';
-import { useT } from '../i18n/lang.js';
-import { IconSearch, IconGrid, IconList, IconArrowUp, IconArrowDown, IconFolderPlus } from './icons.js';
+import { useRef, useState } from "react";
+import type { SortKey, SortDir } from "../types.js";
+import { useT } from "../i18n/lang.js";
+import {
+  IconSearch,
+  IconGrid,
+  IconList,
+  IconArrowUp,
+  IconArrowDown,
+  IconX,
+} from "./icons.js";
+import { AppIcon } from "./Brand.js";
+import { ThemeToggle } from "../theme/ThemeToggle.js";
+import { Ripple } from "./material/Ripple.js";
 
 interface Props {
   query: string;
   onQuery: (q: string) => void;
-  view: 'grid' | 'list';
-  onView: (v: 'grid' | 'list') => void;
+  view: "grid" | "list";
+  onView: (v: "grid" | "list") => void;
   sortKey: SortKey;
   sortDir: SortDir;
   onSortKey: (k: SortKey) => void;
   onToggleSortDir: () => void;
-  folderId: number | null;
-  onNewFolder: () => void;
-  onUploaded: () => void;
+  onMenu: () => void;
+  onRefresh: () => void;
+  title: string;
+  refreshing: boolean;
+  browseControls: boolean;
 }
-
-const segBtn = (active: boolean) =>
-  `grid place-items-center w-9 h-9 transition ${
-    active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-content hover:bg-panel-hi'
-  }`;
-
 export function Topbar({
-  query, onQuery, view, onView, sortKey, sortDir, onSortKey, onToggleSortDir,
-  folderId, onNewFolder, onUploaded,
+  query,
+  onQuery,
+  view,
+  onView,
+  sortKey,
+  sortDir,
+  onSortKey,
+  onToggleSortDir,
+  onMenu,
+  onRefresh,
+  title,
+  refreshing,
+  browseControls,
 }: Props) {
   const { t } = useT();
+  const input = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
   return (
-    <div className="flex items-center gap-2.5 flex-wrap">
-      <div className="relative flex-1 min-w-52">
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-faint pointer-events-none">
-          <IconSearch size={18} />
-        </span>
+    <header className="topbar">
+      <div className="topbar-location">
+        <button
+          className="icon-button mobile-only"
+          onClick={onMenu}
+          aria-label={t("openNavigation")}
+        >
+          <Ripple />
+          <AppIcon name="menu" />
+        </button>
+        <AppIcon name="cloud" size={19} />
+        <span>{title}</span>
+      </div>
+      <div className={`search-field ${focused ? "is-focused" : ""}`}>
+        <IconSearch size={18} />
         <input
+          ref={input}
+          type="search"
+          aria-label={t("searchPlaceholder")}
+          placeholder={t("searchPlaceholder")}
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          className="ring-accent w-full pl-11 pr-4 py-2.5 rounded-xl bg-panel/70 border border-line text-content transition"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
         />
+        {query ? (
+          <button
+            onClick={() => {
+              onQuery("");
+              input.current?.focus();
+            }}
+            aria-label={t("clearSearch")}
+          >
+            <Ripple />
+            <IconX size={15} />
+          </button>
+        ) : (
+          <kbd>/</kbd>
+        )}
       </div>
-
-      <div className="flex items-center rounded-xl border border-line bg-panel/70 overflow-hidden h-[42px]">
-        <select
-          value={sortKey}
-          onChange={(e) => onSortKey(e.target.value as SortKey)}
-          className="h-full pl-3.5 pr-2 bg-transparent text-sm text-content outline-none cursor-pointer hover:text-accent transition"
-          title={t('sortBy')}
-        >
-          <option value="name">{t('sortName')}</option>
-          <option value="date">{t('sortDate')}</option>
-          <option value="size">{t('sortSize')}</option>
-        </select>
+      <div className="topbar-tools">
+        <ThemeToggle compact />
         <button
-          onClick={onToggleSortDir}
-          className="grid place-items-center w-9 h-full text-muted hover:text-accent border-l border-line transition"
-          title={sortDir === 'asc' ? t('sortAsc') : t('sortDesc')}
+          className={`icon-button refresh-button ${refreshing ? "is-refreshing" : ""}`}
+          onClick={onRefresh}
+          aria-label={t("refresh")}
+          title={t("refresh")}
+          disabled={refreshing}
         >
-          {sortDir === 'asc' ? <IconArrowUp size={17} /> : <IconArrowDown size={17} />}
+          <Ripple />
+          <AppIcon name="refresh" size={18} />
         </button>
+        {browseControls && (
+          <div className="sort-control">
+            <select
+              value={sortKey}
+              onChange={(e) => onSortKey(e.target.value as SortKey)}
+              aria-label={t("sortBy")}
+            >
+              <option value="name">{t("sortName")}</option>
+              <option value="date">{t("sortDate")}</option>
+              <option value="size">{t("sortSize")}</option>
+            </select>
+            <button
+              onClick={onToggleSortDir}
+              aria-label={sortDir === "asc" ? t("sortAsc") : t("sortDesc")}
+              title={sortDir === "asc" ? t("sortAsc") : t("sortDesc")}
+            >
+              {sortDir === "asc" ? (
+                <IconArrowUp size={14} />
+              ) : (
+                <IconArrowDown size={14} />
+              )}
+            </button>
+          </div>
+        )}
+        {browseControls && (
+          <div className="view-switch" role="group" aria-label={t("viewGrid")}>
+            <button
+              onClick={() => onView("grid")}
+              className={view === "grid" ? "active" : ""}
+              aria-pressed={view === "grid"}
+              aria-label={t("viewGrid")}
+              title={t("viewGrid")}
+            >
+              <Ripple />
+              <IconGrid size={17} />
+            </button>
+            <button
+              onClick={() => onView("list")}
+              className={view === "list" ? "active" : ""}
+              aria-pressed={view === "list"}
+              aria-label={t("viewList")}
+              title={t("viewList")}
+            >
+              <Ripple />
+              <IconList size={18} />
+            </button>
+          </div>
+        )}
       </div>
-
-      <div className="flex rounded-xl border border-line bg-panel/70 overflow-hidden h-[42px] items-center">
-        <button onClick={() => onView('grid')} className={segBtn(view === 'grid')} title={t('viewGrid')}>
-          <IconGrid size={17} />
-        </button>
-        <div className="w-px h-5 bg-line" />
-        <button onClick={() => onView('list')} className={segBtn(view === 'list')} title={t('viewList')}>
-          <IconList size={17} />
-        </button>
-      </div>
-
-      <button
-        onClick={onNewFolder}
-        className="h-[42px] px-4 rounded-xl bg-panel/70 border border-line text-content hover:border-line-hi hover:text-accent transition flex items-center gap-2"
-      >
-        <IconFolderPlus size={18} />
-        <span className="font-medium hidden sm:inline">{t('folder')}</span>
-      </button>
-
-      <UploadButton folderId={folderId} onUploaded={onUploaded} />
-    </div>
+    </header>
   );
 }

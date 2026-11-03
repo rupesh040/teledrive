@@ -35,6 +35,15 @@ describe('files repo', () => {
     expect(repo.getById(f.id)?.tg_message_id).toBe(7);
   });
 
+  it('lists active files across folders, excluding trash', () => {
+    const dir = folders.create('Projects', null);
+    repo.create({ name: 'root.txt', folderId: null, size: 1, mimeType: 'text/plain', tgMessageId: 10 });
+    repo.create({ name: 'nested.txt', folderId: dir.id, size: 1, mimeType: 'text/plain', tgMessageId: 11 });
+    const removed = repo.create({ name: 'removed.txt', folderId: null, size: 1, mimeType: 'text/plain', tgMessageId: 12 });
+    repo.softDelete(removed.id);
+    expect(repo.listAll().map((file) => file.name).sort()).toEqual(['nested.txt', 'root.txt']);
+  });
+
   it('rename & hapus file', () => {
     const f = repo.create({ name: 'lama', folderId: null, size: 1, mimeType: 'text/plain', tgMessageId: 3 });
     repo.rename(f.id, 'baru');

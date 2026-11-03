@@ -1,0 +1,25 @@
+# SQLite metadata and the Telegram connection require this persistent disk.
+# This configuration uses a paid web service; review Render's current pricing before applying.
+services:
+  - type: web
+    name: teledrive
+    runtime: docker
+    plan: 0.5c-512mb
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DB_PATH
+        value: /data/teledrive.db
+      - key: WEB_DIST_PATH
+        value: /app/web/dist
+    disk:
+      name: teledrive-data
+      mountPath: /data
+      sizeGB: 1

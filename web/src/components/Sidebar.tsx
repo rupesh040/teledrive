@@ -1,75 +1,197 @@
-import type { Stats } from '../types.js';
-import { sizeLabel } from '../lib/format.js';
-import { useT } from '../i18n/lang.js';
-import { IconLogo, IconHome, IconTrashBin } from './icons.js';
-import { AccountMenu } from './AccountMenu.js';
-import { LangToggle } from './LangToggle.js';
+import { useEffect, useRef, useState } from "react";
+import type { DriveRoute, FolderItem, Stats } from "../types.js";
+import { sizeLabel } from "../lib/format.js";
+import { useT } from "../i18n/lang.js";
+import { IconTrashBin, IconX } from "./icons.js";
+import { AccountMenu } from "./AccountMenu.js";
+import { LangToggle } from "./LangToggle.js";
+import { Brand, AppIcon } from "./Brand.js";
+import { ThemeToggle } from "../theme/ThemeToggle.js";
+import { Ripple } from "./material/Ripple.js";
+import { InstallApp } from "../pwa/InstallApp.js";
 
 interface Props {
   stats: Stats | null;
-  route: 'drive' | 'trash';
-  onHome: () => void;
-  onTrash: () => void;
+  route: DriveRoute;
+  current: number | null;
+  folders: FolderItem[];
+  onRoute: (route: DriveRoute) => void;
+  onFolder: (id: number) => void;
   onLoggedOut?: () => void;
+  mobileOpen: boolean;
+  onClose: () => void;
 }
 
-// Display-only quota (not Telegram's actual limit). For the capacity bar aesthetic.
-const QUOTA_BYTES = 50 * 1024 * 1024 * 1024; // 50 GB
-
-export function Sidebar({ stats, route, onHome, onTrash, onLoggedOut }: Props) {
-  const { t } = useT();
-  const used = stats?.totalBytes ?? 0;
-  const pct = Math.min(100, (used / QUOTA_BYTES) * 100);
-  const navItem = (active: boolean) =>
-    `group text-left px-3 py-2.5 rounded-xl border transition flex items-center gap-3 ${
-      active ? 'bg-accent-soft text-content border-line-hi/30 hover:border-line-hi' : 'text-muted border-transparent hover:bg-panel-hi hover:text-content'
-    }`;
-
+export function Sidebar({
+  stats,
+  route,
+  current,
+  folders,
+  onRoute,
+  onFolder,
+  onLoggedOut,
+  mobileOpen,
+  onClose,
+}: Props) {
+  const { t, lang } = useT();
+  const panel = useRef<HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(
+    () => matchMedia("(max-width: 800px)").matches,
+  );
+  useEffect(() => {
+    const media = matchMedia("(max-width: 800px)");
+    const update = () => setIsMobile(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (panel.current) panel.current.inert = isMobile && !mobileOpen;
+    if (!isMobile || !mobileOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    panel.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => {
+      previous?.focus();
+    };
+  }, [isMobile, mobileOpen]);
+  const entries = [
+    {
+      route: "drive" as const,
+      label: t("allFiles"),
+      icon: <AppIcon name="cloud" />,
+    },
+    {
+      route: "recent" as const,
+      label: t("recent"),
+      icon: <AppIcon name="clock" />,
+    },
+    {
+      route: "images" as const,
+      label: t("images"),
+      icon: <AppIcon name="image" />,
+    },
+    {
+      route: "documents" as const,
+      label: t("documents"),
+      icon: <AppIcon name="document" />,
+    },
+  ];
   return (
-    <aside className="w-64 shrink-0 bg-ink-2/70 backdrop-blur-xl border-r border-line px-5 py-6 flex flex-col gap-8">
-      <div className="flex items-center gap-3">
-        <span className="grid place-items-center w-10 h-10 rounded-xl bg-accent-soft text-accent border border-line-hi/40">
-          <IconLogo size={22} />
-        </span>
-        <div className="leading-none">
-          <div className="font-display text-2xl tracking-tight text-content">TeleDrive</div>
-          <div className="text-[11px] text-faint mt-1 tracking-wide">{t('tagline')}</div>
+    <>
+      {mobileOpen && (
+        <button
+          className="sidebar-scrim"
+          aria-label={t("closeNavigation")}
+          onClick={onClose}
+        />
+      )}
+      <aside
+        ref={panel}
+        className={`sidebar ${mobileOpen ? "is-open" : ""}`}
+        aria-label={t("library")}
+        aria-hidden={isMobile && !mobileOpen ? true : undefined}
+        onKeyDown={(event) => {
+          if (!isMobile || !mobileOpen || event.key !== "Tab") return;
+          const nodes = Array.from(
+            panel.current?.querySelectorAll<HTMLElement>(
+              "button:not(:disabled),a[href]",
+            ) ?? [],
+          ).filter((element) => element.getClientRects().length > 0);
+          const first = nodes[0],
+            last = nodes[nodes.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
+      >
+        <div className="sidebar-brand">
+          <Brand />
+          <button
+            className="icon-button mobile-only"
+            onClick={onClose}
+            aria-label={t("closeNavigation")}
+          >
+            <IconX />
+          </button>
         </div>
-      </div>
-
-      <nav className="flex flex-col gap-1">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-faint px-2 mb-1">{t('library')}</p>
-        <button onClick={onHome} className={navItem(route === 'drive')}>
-          <span className={route === 'drive' ? 'text-accent' : ''}><IconHome size={18} /></span>
-          <span className="font-medium">{t('myDrive')}</span>
-        </button>
-        <button onClick={onTrash} className={navItem(route === 'trash')}>
-          <span className={route === 'trash' ? 'text-accent' : ''}><IconTrashBin size={18} /></span>
-          <span className="font-medium">{t('trashNav')}</span>
-        </button>
-      </nav>
-
-      <div className="mt-auto flex flex-col gap-4">
-        <AccountMenu onLoggedOut={onLoggedOut} />
-        <LangToggle className="self-start" />
-
-        <div className="rounded-2xl border border-line bg-panel/60 p-4">
-        <div className="flex items-baseline justify-between mb-2.5">
-          <span className="text-xs uppercase tracking-[0.16em] text-faint">{t('storage')}</span>
-          <span className="text-xs text-accent font-semibold">{pct.toFixed(1)}%</span>
+        <nav className="sidebar-nav" aria-label={t("collections")}>
+          <p className="nav-label">{t("library")}</p>
+          {entries.map((entry) => (
+            <button
+              key={entry.route}
+              className={`nav-item ${route === entry.route && current === null ? "active" : ""}`}
+              aria-current={
+                route === entry.route && current === null ? "page" : undefined
+              }
+              onClick={() => onRoute(entry.route)}
+            >
+              <Ripple />
+              {entry.icon}
+              <span>{entry.label}</span>
+              {entry.route === "drive" && stats && (
+                <span className="nav-count">{stats.totalFiles}</span>
+              )}
+            </button>
+          ))}
+          <button
+            className={`nav-item trash-nav ${route === "trash" ? "active" : ""}`}
+            aria-current={route === "trash" ? "page" : undefined}
+            onClick={() => onRoute("trash")}
+          >
+            <Ripple />
+            <IconTrashBin size={20} />
+            <span>{t("trashNav")}</span>
+          </button>
+        </nav>
+        {folders.length > 0 && (
+          <nav className="sidebar-folders" aria-label={t("yourFolders")}>
+            <p className="nav-label">{t("yourFolders")}</p>
+            {folders.slice(0, 5).map((folder, index) => (
+              <button
+                className={`nav-item ${current === folder.id && route === "drive" ? "active" : ""}`}
+                key={folder.id}
+                onClick={() => onFolder(folder.id)}
+              >
+                <Ripple />
+                <span className={`folder-dot dot-${index % 4}`} />
+                <span className="truncate">{folder.name}</span>
+              </button>
+            ))}
+          </nav>
+        )}
+        <div className="sidebar-bottom">
+          <div className="storage-card">
+            <span className="storage-cloud">
+              <AppIcon name="cloud" size={22} />
+            </span>
+            <div>
+              <strong>{t("storage")}</strong>
+              <p>
+                {sizeLabel(stats?.totalBytes ?? 0)} <span>{t("used")}</span>
+              </p>
+            </div>
+            <span className="storage-check">
+              <AppIcon name="shield" size={17} />
+            </span>
+            <p className="storage-note">{t("privateHint")}</p>
+          </div>
+          <InstallApp sidebar />
+          <div className="sidebar-appearance">
+            <p className="nav-label">
+              {lang === "en" ? "Appearance" : "Tampilan"}
+            </p>
+            <ThemeToggle showLabels />
+          </div>
+          <div className="sidebar-preferences">
+            <LangToggle />
+            <span className="connection-dot" title={t("connected")} />
+          </div>
+          <AccountMenu onLoggedOut={onLoggedOut} />
         </div>
-        <div className="h-2 rounded-full bg-ink overflow-hidden border border-line">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-accent-2 to-accent-deep transition-all duration-500"
-            style={{ width: `${Math.max(pct, used > 0 ? 4 : 0)}%` }}
-          />
-        </div>
-        <div className="text-xs text-muted mt-2.5">
-          <span className="text-content font-medium">{sizeLabel(used)}</span> {t('used')}
-          <span className="text-faint"> · {stats?.totalFiles ?? 0} {t('files')}</span>
-        </div>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

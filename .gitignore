@@ -2,7 +2,11 @@ node_modules/
 dist/
 .env
 *.db
+*.db-*
+*.sqlite*
 *.log
+.vercel/
+*.local
 
 # all documentation/markdown — do not upload (except README)
 *.md

@@ -3,6 +3,8 @@ import type { FolderItem, FileItem } from '../types.js';
 import { sizeLabel } from '../lib/format.js';
 import { useT } from '../i18n/lang.js';
 import { FolderGlyph, FileGlyph } from './Glyph.js';
+import { IconSearch, IconChevron } from './icons.js';
+import './support-flows.css';
 
 interface Props {
   folders: FolderItem[];
@@ -13,65 +15,38 @@ interface Props {
 }
 
 export function SearchResults({ folders, files, allFolders, onOpenFolder, onPreview }: Props) {
-  const { t } = useT();
-  const byId = useMemo(() => {
-    const m = new Map<number, FolderItem>();
-    allFolders.forEach((f) => m.set(f.id, f));
-    return m;
-  }, [allFolders]);
-
-  // Jalur lokasi sebuah folder (mis. "Foto / 2024"); akar → label Beranda.
+  const { t, lang } = useT();
+  const byId = useMemo(() => new Map(allFolders.map((folder) => [folder.id, folder])), [allFolders]);
   const pathOf = (folderId: number | null): string => {
-    if (folderId == null) return t('homeRoot');
+    if (folderId == null) return t('myDrive');
     const parts: string[] = [];
-    let cur = byId.get(folderId);
-    let guard = 0;
-    while (cur && guard++ < 50) {
-      parts.unshift(cur.name);
-      cur = cur.parent_id == null ? undefined : byId.get(cur.parent_id);
+    const visited = new Set<number>();
+    let current = byId.get(folderId);
+    while (current && !visited.has(current.id)) {
+      visited.add(current.id);
+      parts.unshift(current.name);
+      current = current.parent_id == null ? undefined : byId.get(current.parent_id);
     }
-    return parts.length ? parts.join(' / ') : t('homeRoot');
+    return parts.length ? parts.join(' / ') : t('myDrive');
   };
 
   if (folders.length === 0 && files.length === 0) {
-    return (
-      <div className="grid place-items-center py-24 text-center">
-        <div className="w-16 h-16 rounded-2xl border border-line bg-panel/60 grid place-items-center mb-4 text-3xl">🔍</div>
-        <p className="font-display text-2xl text-content">{t('noResults')}</p>
-      </div>
-    );
+    return <div className="support-empty library-empty"><span className="support-empty-symbol"><IconSearch size={34} /></span><h2>{t('noResults')}</h2><p>{lang === 'en' ? 'Try a different name or a shorter search.' : 'Coba nama lain atau pencarian yang lebih singkat.'}</p></div>;
   }
 
   return (
-    <div className="flex flex-col gap-0.5">
-      {folders.map((f) => (
-        <button
-          key={`d${f.id}`}
-          onClick={() => onOpenFolder(f.id)}
-          className="group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-panel/70 hover:border-line transition text-left"
-        >
-          <span className="shrink-0"><FolderGlyph size={30} /></span>
-          <span className="flex-1 min-w-0">
-            <span className="block truncate text-content">{f.name}</span>
-            <span className="block truncate text-xs text-faint">{t('inLocation')} {pathOf(f.parent_id)}</span>
-          </span>
-          <span className="text-xs text-faint shrink-0">{t('folder')}</span>
-        </button>
-      ))}
-      {files.map((f) => (
-        <button
-          key={`f${f.id}`}
-          onClick={() => onPreview(f)}
-          className="group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-panel/70 hover:border-line transition text-left"
-        >
-          <span className="shrink-0"><FileGlyph mime={f.mime_type} name={f.name} size={30} /></span>
-          <span className="flex-1 min-w-0">
-            <span className="block truncate text-content">{f.name}</span>
-            <span className="block truncate text-xs text-faint">{t('inLocation')} {pathOf(f.folder_id)}</span>
-          </span>
-          <span className="text-xs text-faint shrink-0">{sizeLabel(f.size)}</span>
-        </button>
-      ))}
+    <div className="support-results search-results">
+      <p className="search-result-count" role="status">{folders.length + files.length} {lang === 'en' ? ((folders.length + files.length) === 1 ? 'result in your drive' : 'results in your drive') : 'hasil di drive Anda'}</p>
+      {folders.map((folder) => <button key={`d${folder.id}`} onClick={() => onOpenFolder(folder.id)} className="search-result-row">
+        <span className="support-row-glyph"><FolderGlyph size={37} /></span>
+        <span className="search-result-name"><span title={folder.name}>{folder.name}</span><small>{pathOf(folder.parent_id)}</small></span>
+        <span className="support-row-size">{t('folder')}</span><IconChevron size={17} />
+      </button>)}
+      {files.map((file) => <button key={`f${file.id}`} onClick={() => onPreview(file)} className="search-result-row">
+        <span className="support-row-glyph"><FileGlyph mime={file.mime_type} name={file.name} size={37} /></span>
+        <span className="search-result-name"><span title={file.name}>{file.name}</span><small>{pathOf(file.folder_id)}</small></span>
+        <span className="support-row-size">{sizeLabel(file.size)}</span><IconChevron size={17} />
+      </button>)}
     </div>
   );
 }

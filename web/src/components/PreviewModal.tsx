@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { FileItem } from '../types.js';
 import { api } from '../api/client.js';
 import { sizeLabel, isImage, isVideo, isAudio, isPdf, isText } from '../lib/format.js';
 import { useT } from '../i18n/lang.js';
 import { IconX, IconDownload } from './icons.js';
+import { FileGlyph } from './Glyph.js';
+import { useSupportDialog } from './support-dialog.js';
+import { MaterialButton } from './material/MaterialButton.js';
+import './support-flows.css';
 
 interface Props {
   file: FileItem | null;
@@ -11,85 +15,70 @@ interface Props {
 }
 
 export function PreviewModal({ file, onClose }: Props) {
-  const { t: tr } = useT();
+  const { t, lang } = useT();
   const [text, setText] = useState<string | null>(null);
-
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const titleId = useId();
+  const dialog = useSupportDialog(!!file, onClose);
   const asText = !!file && isText(file.mime_type, file.name);
 
   useEffect(() => {
     setText(null);
+    setFailed(false);
+    setLoaded(false);
     if (!file || !asText) return;
-    let alive = true;
-    fetch(api.previewUrl(file.id))
-      .then((r) => r.text())
-      .then((txt) => { if (alive) setText(txt.slice(0, 200_000)); })
-      .catch(() => { if (alive) setText(tr('notPreviewable')); });
-    return () => { alive = false; };
-  }, [file, asText, tr]);
+    const controller = new AbortController();
+    fetch(api.previewUrl(file.id), { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Preview unavailable');
+        return response.text();
+      })
+      .then((value) => { if (!controller.signal.aborted) { setText(value.slice(0, 200_000)); setLoaded(true); } })
+      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    return () => controller.abort();
+  }, [file, asText, retry]);
 
   if (!file) return null;
   const url = api.previewUrl(file.id);
-  const t = file.mime_type;
-  const previewable = isImage(t) || isVideo(t) || isAudio(t) || isPdf(t) || asText;
+  const mime = file.mime_type;
+  const previewable = isImage(mime) || isVideo(mime) || isAudio(mime) || isPdf(mime) || asText;
+  const closeLabel = lang === 'en' ? 'Close preview' : 'Tutup pratinjau';
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-ink/85 backdrop-blur-md flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="pop-in bg-panel border border-line rounded-2xl max-w-[92vw] max-h-[92vh] overflow-auto shadow-lift"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 flex items-center justify-between gap-4 px-5 py-3.5 border-b border-line bg-panel/95 backdrop-blur">
-          <div className="min-w-0">
-            <h3 className="font-medium text-content truncate">{file.name}</h3>
-            <p className="text-xs text-faint">{sizeLabel(file.size)}</p>
+    <div className="support-backdrop" onClick={onClose}>
+      <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
+        className="support-dialog preview-dialog" onClick={(event) => event.stopPropagation()}>
+        <header className="support-dialog-header">
+          <span className="preview-file-icon"><FileGlyph mime={mime} name={file.name} size={32} /></span>
+          <div className="support-dialog-title">
+            <h2 id={titleId}>{file.name}</h2>
+            <p>{sizeLabel(file.size)}<span aria-hidden="true"> · </span>{lang === 'en' ? 'File preview' : 'Pratinjau file'}</p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <a
-              href={api.downloadUrl(file.id)}
-              title={tr('download')}
-              className="grid place-items-center w-9 h-9 rounded-lg text-muted hover:text-accent hover:bg-ink/70 transition"
-            >
-              <IconDownload size={18} />
-            </a>
-            <button
-              onClick={onClose}
-              className="grid place-items-center w-9 h-9 rounded-lg text-muted hover:text-content hover:bg-ink/70 transition"
-            >
-              <IconX size={18} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-5">
-          {isImage(t) && <img src={url} alt={file.name} className="max-w-full rounded-xl" />}
-          {isVideo(t) && <video src={url} controls autoPlay className="max-w-full max-h-[78vh] rounded-xl" />}
-          {isAudio(t) && (
-            <div className="w-[70vw] max-w-xl py-10 grid place-items-center gap-4">
-              <div className="text-6xl">🎵</div>
-              <audio src={url} controls autoPlay className="w-full" />
+          <a href={api.downloadUrl(file.id)} title={t('download')} aria-label={`${t('download')} ${file.name}`} className="support-icon-button"><IconDownload size={19} /></a>
+          <button onClick={onClose} title={closeLabel} aria-label={closeLabel} className="support-icon-button"><IconX size={19} /></button>
+        </header>
+        <div className={`preview-content ${isImage(mime) ? 'preview-image-content' : ''}`}>
+          {failed || !previewable ? (
+            <div className="support-empty preview-empty">
+              <span className="support-empty-symbol"><FileGlyph mime={mime} name={file.name} size={64} /></span>
+              <h3>{t('notPreviewable')}</h3>
+              {failed && <p>{lang === 'en' ? 'The preview could not be loaded. You can try again or download the original.' : 'Pratinjau tidak dapat dimuat. Coba lagi atau unduh file asli.'}</p>}
+              <div className="support-inline-actions">
+                {failed && <MaterialButton variant="text" onClick={() => setRetry((value) => value + 1)}>{lang === 'en' ? 'Try again' : 'Coba lagi'}</MaterialButton>}
+                <MaterialButton icon={<IconDownload size={18} />} onClick={() => window.location.assign(api.downloadUrl(file.id))}>{t('downloadFile')}</MaterialButton>
+              </div>
             </div>
-          )}
-          {isPdf(t) && (
-            <iframe src={url} title={file.name} className="w-[80vw] h-[72vh] rounded-xl bg-white" />
-          )}
-          {asText && (
-            <pre className="w-[80vw] max-w-3xl max-h-[72vh] overflow-auto text-sm text-content bg-ink/60 border border-line rounded-xl p-4 whitespace-pre-wrap break-words">
-              {text ?? tr('loading')}
-            </pre>
-          )}
-          {!previewable && (
-            <div className="py-16 px-8 text-center">
-              <p className="text-muted">{tr('notPreviewable')}</p>
-              <a
-                href={api.downloadUrl(file.id)}
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl font-semibold text-ink bg-gradient-to-b from-accent-2 to-accent shadow-glow transition"
-              >
-                <IconDownload size={18} /> {tr('downloadFile')}
-              </a>
-            </div>
+          ) : (
+            <>
+              {!loaded && (isImage(mime) || asText) && <div role="status" className="preview-loading"><span className="support-spinner" />{t('loading')}</div>}
+              {isImage(mime) && <img key={retry} src={url} alt={file.name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} className={loaded ? '' : 'preview-hidden'} />}
+              {isVideo(mime) && <video key={retry} src={url} controls playsInline onError={() => setFailed(true)} />}
+              {isAudio(mime) && <div className="preview-audio"><FileGlyph mime={mime} name={file.name} size={94} /><h3>{file.name}</h3><audio key={retry} src={url} controls onError={() => setFailed(true)} /></div>}
+              {isPdf(mime) && <iframe key={retry} src={url} title={file.name} />}
+              {asText && text !== null && <pre>{text}</pre>}
+            </>
           )}
         </div>
       </div>

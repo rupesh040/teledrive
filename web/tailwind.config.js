@@ -1,32 +1,32 @@
 /** @type {import('tailwindcss').Config} */
+const role = (name) => `rgb(var(--md-sys-color-${name}-rgb) / <alpha-value>)`;
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Hanken Grotesk', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Georgia', 'serif'],
+        sans: ["Roboto", "sans-serif"],
+        display: ["Roboto", "sans-serif"],
       },
-      // Nilai hex/solid (bukan var()) agar modifier opacity Tailwind (/70 dst.) berfungsi.
       colors: {
-        ink: '#100c08',
-        'ink-2': '#16110b',
-        panel: '#1c1610',
-        'panel-hi': '#241d14',
-        line: '#2a2017',
-        'line-hi': '#e9a23b',
-        content: '#f3ead9',
-        muted: '#ab9d86',
-        faint: '#6f6353',
-        accent: '#e9a23b',
-        'accent-2': '#f2bd66',
-        'accent-deep': '#b9781a',
-        'accent-soft': 'rgba(233,162,59,0.13)',
+        ink: role("surface"),
+        "ink-2": role("surface-container-low"),
+        panel: role("surface-container-lowest"),
+        "panel-hi": role("surface-container-high"),
+        line: role("outline-variant"),
+        "line-hi": role("primary"),
+        content: role("on-surface"),
+        muted: role("on-surface-variant"),
+        faint: role("on-surface-variant"),
+        accent: role("primary"),
+        "accent-2": role("primary"),
+        "accent-deep": role("primary"),
+        "accent-soft": role("secondary-container"),
       },
       boxShadow: {
-        card: '0 1px 0 rgba(255,255,255,0.02) inset, 0 12px 30px -18px rgba(0,0,0,0.8)',
-        lift: '0 18px 40px -16px rgba(0,0,0,0.85), 0 0 0 1px rgba(233,162,59,0.30)',
-        glow: '0 8px 30px -8px rgba(233,162,59,0.45)',
+        card: "var(--md-sys-elevation-level1)",
+        lift: "var(--md-sys-elevation-level3)",
+        glow: "none",
       },
     },
   },

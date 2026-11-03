@@ -5,13 +5,14 @@ import type { LoginClient } from './loginFlow.js';
 import { createStorageChannel } from './channel.js';
 
 // Wrap the real TelegramClient to fit the LoginClient interface.
-export function makeGramClient(apiId: number, apiHash: string): LoginClient {
-  const tc = new TelegramClient(new StringSession(''), apiId, apiHash, { connectionRetries: 5 });
+export function makeGramClient(apiId: number, apiHash: string, options: { floodSleepThreshold?: number } = {}): LoginClient {
+  const tc = new TelegramClient(new StringSession(''), apiId, apiHash, { connectionRetries: 5, ...options });
   return {
     get connected() { return tc.connected ?? false; },
     set connected(_v: boolean) { /* managed by TelegramClient */ },
     connect: async () => { await tc.connect(); },
     disconnect: () => tc.disconnect(),
+    async logOut() { await tc.invoke(new Api.auth.LogOut()); },
     async sendCode(creds: { apiId: number; apiHash: string }, phone: string) {
       const r = await tc.sendCode({ apiId: creds.apiId, apiHash: creds.apiHash }, phone);
       return { phoneCodeHash: r.phoneCodeHash };

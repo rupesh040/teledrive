@@ -6,6 +6,7 @@ export interface LoginClient {
   connected: boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
+  logOut?(): Promise<void>;
   sendCode(creds: { apiId: number; apiHash: string }, phone: string): Promise<{ phoneCodeHash: string }>;
   signIn(args: { phoneNumber: string; phoneCodeHash: string; phoneCode: string }): Promise<void>;
   signInPassword(args: { password: string }): Promise<void>;

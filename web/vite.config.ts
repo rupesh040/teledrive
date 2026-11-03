@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { pwaPlugin } from './scripts/pwa.mjs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), pwaPlugin()],
   server: {
-    proxy: { '/api': 'http://localhost:3000' },
+    proxy: { "/api": process.env.TELEDRIVE_API_URL || "http://localhost:3000" },
   },
 });

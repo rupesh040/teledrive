@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import type { FolderItem, FileItem } from '../types.js';
 import { api } from '../api/client.js';
-import { sizeLabel, dateLabel } from '../lib/format.js';
+import { sizeLabel, dateLabel, fileMeta } from '../lib/format.js';
 import { useT } from '../i18n/lang.js';
 import { DATE_LOCALE } from '../i18n/strings.js';
 import { dnd, type DragItem } from '../lib/dnd.js';
 import { FolderGlyph, FileGlyph } from './Glyph.js';
-import { IconMove, IconPencil, IconTrash, IconDownload, IconCheck } from './icons.js';
+import { IconCheck } from './icons.js';
+import { FileActions } from './FileActions.js';
+import { Ripple } from './material/Ripple.js';
 
-interface SelectProps {
-  selected: boolean;
-  selectionActive: boolean;
-  onToggleSelect: () => void;
-}
+interface SelectProps { selected: boolean; selectionActive: boolean; onToggleSelect: () => void; }
 interface FolderProps extends SelectProps {
-  kind: 'folder';
-  folder: FolderItem;
+  kind: 'folder'; folder: FolderItem;
   onOpen: (id: number) => void;
   onRename: (id: number) => void;
   onDelete: (id: number) => void;
@@ -24,8 +21,7 @@ interface FolderProps extends SelectProps {
   onUploadToFolder: (files: FileList | File[], folderId: number) => void;
 }
 interface FileProps extends SelectProps {
-  kind: 'file';
-  file: FileItem;
+  kind: 'file'; file: FileItem;
   onPreview: (f: FileItem) => void;
   onRename: (id: number) => void;
   onDelete: (id: number) => void;
@@ -34,92 +30,48 @@ interface FileProps extends SelectProps {
 }
 type Props = FolderProps | FileProps;
 
-function SelectBox({ selected, selectionActive, onToggle }: { selected: boolean; selectionActive: boolean; onToggle: () => void }) {
-  return (
-    <button
-      draggable={false}
-      onClick={(e) => { e.stopPropagation(); onToggle(); }}
-      className={`shrink-0 grid place-items-center w-5 h-5 rounded-md border transition ${
-        selected
-          ? 'bg-accent border-accent text-ink opacity-100'
-          : `bg-ink/70 border-line text-transparent ${selectionActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
-      }`}
-    >
-      <IconCheck size={13} />
-    </button>
-  );
-}
-
-const iconBtn =
-  'grid place-items-center w-8 h-8 rounded-lg text-muted hover:text-accent hover:bg-ink/70 transition';
-const danger = 'grid place-items-center w-8 h-8 rounded-lg text-muted hover:text-[#e0584c] hover:bg-ink/70 transition';
-
 export function ItemRow(props: Props) {
   const { t, lang } = useT();
   const [over, setOver] = useState(false);
-  const loc = DATE_LOCALE[lang];
-  if (props.kind === 'folder') {
-    const { folder, onOpen, onRename, onDelete, onMove, onMoveByDrag, onUploadToFolder, selected, selectionActive, onToggleSelect } = props;
-    const canDrop = (e: React.DragEvent) => {
-      if (e.dataTransfer.types.includes('Files')) return true;
-      const d = dnd.get();
-      return !!d && !(d.kind === 'folder' && d.id === folder.id);
-    };
-    return (
-      <div
-        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
-          over || selected ? 'bg-accent-soft border-line-hi' : 'border-transparent hover:bg-panel/70 hover:border-line'
-        }`}
-        draggable
-        onDragStart={() => dnd.set({ kind: 'folder', id: folder.id })}
-        onDragEnd={() => dnd.set(null)}
-        onDragOver={(e) => { if (canDrop(e)) { e.preventDefault(); setOver(true); } }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(e) => {
-          if (!canDrop(e)) return;
-          e.preventDefault();
-          e.stopPropagation();
-          setOver(false);
-          if (e.dataTransfer.files.length) { onUploadToFolder(e.dataTransfer.files, folder.id); return; }
-          const d = dnd.get();
-          if (d) onMoveByDrag(d, folder.id);
-        }}
-      >
-        <SelectBox selected={selected} selectionActive={selectionActive} onToggle={onToggleSelect} />
-        <span className="shrink-0"><FolderGlyph size={30} /></span>
-        <button className="flex-1 text-left truncate text-content" onClick={() => onOpen(folder.id)}>{folder.name}</button>
-        <span className="text-xs text-faint w-28 text-right hidden md:block">{dateLabel(folder.created_at, loc)}</span>
-        <span className="text-xs text-faint w-20 text-right">—</span>
-        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-          <button className={iconBtn} title={t('move')} onClick={() => onMove(folder.id)}><IconMove size={16} /></button>
-          <button className={iconBtn} title={t('rename')} onClick={() => onRename(folder.id)}><IconPencil size={16} /></button>
-          <button className={danger} title={t('delete')} onClick={() => onDelete(folder.id)}><IconTrash size={16} /></button>
-        </div>
-      </div>
-    );
-  }
-
-  const { file, onPreview, onRename, onDelete, onMove, selected, selectionActive, onToggleSelect } = props;
+  const folder = props.kind === 'folder' ? props.folder : null;
+  const file = props.kind === 'file' ? props.file : null;
+  const item = folder ?? file!;
+  const canDrop = (event: React.DragEvent) => {
+    if (!folder) return false;
+    if (event.dataTransfer.types.includes('Files')) return true;
+    const source = dnd.get();
+    return !!source && !(source.kind === 'folder' && source.id === folder.id);
+  };
   return (
-    <div
-      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
-        selected ? 'bg-accent-soft border-line-hi' : 'border-transparent hover:bg-panel/70 hover:border-line'
-      }`}
+    <div className={`file-row ${props.selected ? 'is-selected' : ''} ${over ? 'is-drop-target' : ''} ${props.selectionActive ? 'selection-active' : ''}`}
       draggable
-      onDragStart={() => dnd.set({ kind: 'file', id: file.id })}
-      onDragEnd={() => dnd.set(null)}
+      onDragStart={(event) => { dnd.set({ kind: props.kind, id: item.id }); event.dataTransfer.setData('text/plain', item.name); event.dataTransfer.effectAllowed = 'move'; }}
+      onDragEnd={() => { dnd.set(null); setOver(false); }}
+      onDragOver={(event) => { if (canDrop(event)) { event.preventDefault(); setOver(true); } }}
+      onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false); }}
+      onDrop={(event) => {
+        if (!canDrop(event) || props.kind !== 'folder') return;
+        event.preventDefault(); event.stopPropagation(); setOver(false);
+        if (event.dataTransfer.files.length) props.onUploadToFolder(event.dataTransfer.files, props.folder.id);
+        else { const source = dnd.get(); if (source) props.onMoveByDrag(source, props.folder.id); dnd.set(null); }
+      }}
     >
-      <SelectBox selected={selected} selectionActive={selectionActive} onToggle={onToggleSelect} />
-      <span className="shrink-0"><FileGlyph mime={file.mime_type} name={file.name} size={30} /></span>
-      <button className="flex-1 text-left truncate text-content" onClick={() => onPreview(file)}>{file.name}</button>
-      <span className="text-xs text-faint w-28 text-right hidden md:block">{dateLabel(file.created_at, loc)}</span>
-      <span className="text-xs text-muted w-20 text-right">{sizeLabel(file.size)}</span>
-      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-        <a className={iconBtn} title={t('download')} href={api.downloadUrl(file.id)}><IconDownload size={16} /></a>
-        <button className={iconBtn} title={t('move')} onClick={() => onMove(file.id)}><IconMove size={16} /></button>
-        <button className={iconBtn} title={t('rename')} onClick={() => onRename(file.id)}><IconPencil size={16} /></button>
-        <button className={danger} title={t('delete')} onClick={() => onDelete(file.id)}><IconTrash size={16} /></button>
-      </div>
+      <button type="button" className="file-select md-state-layer" role="checkbox" aria-checked={props.selected} aria-label={`${lang === 'id' ? 'Pilih' : 'Select'} ${item.name}`} draggable={false}
+        onClick={() => props.onToggleSelect()}><Ripple /><IconCheck size={18} /></button>
+      <button type="button" className="file-row-open md-state-layer" title={item.name} onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || props.selectionActive) { props.onToggleSelect(); return; }
+        if (props.kind === 'folder') props.onOpen(props.folder.id);
+        else props.onPreview(props.file);
+      }}>
+        <Ripple />
+        {folder ? <FolderGlyph size={34} /> : <FileGlyph mime={file!.mime_type} name={file!.name} size={34} />}
+        <span>{item.name}</span>
+      </button>
+      <span className="file-row-date">{dateLabel(item.created_at, DATE_LOCALE[lang])}</span>
+      <span className="file-row-type">{folder ? t('folder') : fileMeta(file!.mime_type, file!.name).label}</span>
+      <span className="file-row-size">{file ? sizeLabel(file.size) : '—'}</span>
+      <FileActions name={item.name} downloadUrl={file ? api.downloadUrl(file.id) : undefined}
+        onRename={() => props.onRename(item.id)} onMove={() => props.onMove(item.id)} onDelete={() => props.onDelete(item.id)} />
     </div>
   );
 }
