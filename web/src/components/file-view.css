@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  animation: file-appear 350ms var(--md-sys-motion-easing-emphasized-decelerate) both;
 }
+.file-list { animation: file-appear 350ms var(--md-sys-motion-easing-emphasized-decelerate) both; }
 
 .file-section-heading {
   display: flex;
@@ -49,12 +51,17 @@
   transition:
     border-color var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard),
     background-color var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-decelerate),
     box-shadow var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
-  animation: file-appear var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized) both;
+  animation: file-appear var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized) backwards;
 }
 
 .file-card:hover {
   box-shadow: var(--md-sys-elevation-level1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .file-card:not(.is-drop-target):not([draggable="true"]:active):hover { transform: translateY(-2px); }
+  .file-card:not(.is-drop-target):active { transform: translateY(0); }
 }
 
 .file-card:focus-within {
@@ -526,7 +533,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .file-card, .file-action-menu { animation: none; }
+  .file-library, .file-list, .file-card, .file-action-menu { animation: none; }
+  .file-card:hover, .file-card:active { transform: none !important; }
   .file-card, .file-card-art, .file-select, .file-more, .file-row,
   .folder-glyph path, .document-glyph path, .document-glyph rect, .document-glyph text { transition: none; }
 }

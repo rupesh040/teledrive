@@ -6,7 +6,8 @@ import { useT } from '../i18n/lang.js';
 import { App } from '../App.js';
 import { Onboarding } from './onboarding/Onboarding.js';
 import { LockScreen } from './LockScreen.js';
-import { AuthLayout, AuthSpinner, CloudMark } from './AuthLayout.js';
+import { AuthLayout, CloudMark } from './AuthLayout.js';
+import { WavyProgress } from './material/WavyProgress.js';
 import { MaterialButton } from './material/MaterialButton.js';
 import { setEphemeralStorage } from './HostingNotice.js';
 
@@ -52,7 +53,7 @@ export function Gate() {
   }, [refresh]);
 
   if (checking || !status || error) {
-    return <AuthLayout compact><div className="auth-status"><span className="auth-brand-mark"><CloudMark size={35} /></span>{error ? <><h1 className="auth-form-title">{lang === 'en' ? 'A little connection trouble.' : 'Ada kendala koneksi.'}</h1><p>{lang === 'en' ? 'Start the TeleDrive server, then try again.' : 'Jalankan server TeleDrive, lalu coba lagi.'}</p><MaterialButton className="auth-submit" onClick={refresh}>{lang === 'en' ? 'Try again' : 'Coba lagi'}</MaterialButton></> : <><AuthSpinner /><span role="status">{t('loadingApp')}</span></>}</div></AuthLayout>;
+    return <AuthLayout compact><div className="auth-status"><span className="auth-brand-mark"><CloudMark size={35} /></span>{error ? <><h1 className="auth-form-title">{lang === 'en' ? 'A little connection trouble.' : 'Ada kendala koneksi.'}</h1><p>{lang === 'en' ? 'Start the TeleDrive server, then try again.' : 'Jalankan server TeleDrive, lalu coba lagi.'}</p><MaterialButton className="auth-submit" onClick={refresh}>{lang === 'en' ? 'Try again' : 'Coba lagi'}</MaterialButton></> : <><WavyProgress className="auth-boot-progress" label={t('loadingApp')} /><span role="status">{t('loadingApp')}</span></>}</div></AuthLayout>;
   }
   if (!status.configured) {
     return <Onboarding onDone={() => {

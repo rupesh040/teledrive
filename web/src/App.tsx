@@ -23,6 +23,7 @@ import { MoveModal } from "./components/MoveModal.js";
 import { UploadQueue, type UploadItem } from "./components/UploadQueue.js";
 import { UploadButton } from "./components/UploadButton.js";
 import { MaterialButton } from "./components/material/MaterialButton.js";
+import { WavyProgress } from "./components/material/WavyProgress.js";
 import { Ripple } from "./components/material/Ripple.js";
 import { ActionDialog, type DialogRequest } from "./components/ActionDialog.js";
 import { AppIcon } from "./components/Brand.js";
@@ -566,6 +567,7 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
             void uploadFiles(event.dataTransfer.files, destination);
           }}
         >
+          <div className="drive-progress-slot"><WavyProgress active={loading} label={t('loading')} /></div>
           <div
             className="content-inner"
             key={`${route}:${current}:${searching ? "search" : "browse"}`}
@@ -804,7 +806,7 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
               </div>
             ) : (
               <FileView
-                key={view}
+                key={`${route}:${current}:${view}`}
                 view={view}
                 folders={shownFolders}
                 files={shownFiles}

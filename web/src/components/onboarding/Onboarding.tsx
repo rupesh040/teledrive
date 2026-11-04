@@ -3,6 +3,7 @@ import { api } from '../../api/client.js';
 import { useT } from '../../i18n/lang.js';
 import { AuthLayout, AuthSpinner } from '../AuthLayout.js';
 import { MaterialButton } from '../material/MaterialButton.js';
+import { WavyProgress } from '../material/WavyProgress.js';
 
 type Step = 'creds' | 'code' | 'password' | 'pin';
 
@@ -69,6 +70,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       <h2 className="auth-form-title">{title}</h2>
       <p className="auth-form-description">{description}</p>
       <form key={step} className="auth-form" onSubmit={submit} aria-busy={busy}>
+        {busy && <WavyProgress className="auth-operation-progress" label={waitingLabel} />}
         {step === 'creds' && <>
           <div className="auth-credentials-row">
             <label className="auth-field" htmlFor="api-id"><span>{t('apiIdLabel')}</span><input id="api-id" name="apiId" inputMode="numeric" placeholder="12345678" value={apiId} onChange={e => setApiId(e.target.value)} disabled={busy} required autoComplete="off" /></label>

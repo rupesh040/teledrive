@@ -4,6 +4,7 @@ import { LangToggle } from './LangToggle.js';
 import { ThemeToggle } from '../theme/ThemeToggle.js';
 import { InstallApp } from '../pwa/InstallApp.js';
 import { HostingNotice } from './HostingNotice.js';
+import { WavySpinner } from './material/WavyProgress.js';
 import './auth.css';
 
 export function CloudMark({ size = 28 }: { size?: number }) {
@@ -43,5 +44,5 @@ export function AuthLayout({ children, compact = false }: { children: ReactNode;
 }
 
 export function AuthSpinner() {
-  return <svg className="auth-spinner" width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="2" opacity=".25" /><path d="M10 3a7 7 0 0 1 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
+  return <WavySpinner />;
 }

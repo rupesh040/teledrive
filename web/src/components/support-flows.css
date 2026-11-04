@@ -301,15 +301,21 @@
     -10px 0;
 }
 .preview-loading {
+  background: var(--md-sys-color-surface-container-low);
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   color: var(--md-sys-color-primary);
   font-size: 14px;
   line-height: 20px;
+}
+.preview-loading > .wavy-progress {
+  --wavy-progress-surface: var(--md-sys-color-surface-container-low);
+  width: min(240px, 70%);
 }
 .preview-empty {
   width: 100%;
@@ -662,6 +668,8 @@
 .upload-panel-collapse.is-collapsed {
   grid-template-rows: 0fr;
 }
+.upload-panel-collapse.is-collapsed .wavy-progress-path,
+.upload-panel-collapse.is-collapsed .wavy-progress-indicator { animation-play-state: paused; }
 .upload-panel-items {
   min-height: 0;
   overflow: hidden;
@@ -708,27 +716,7 @@
   font-size: 12px;
   line-height: 16px;
 }
-.upload-progress-track {
-  height: 4px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: var(--md-sys-color-surface-container-highest);
-}
-.upload-progress-track > div {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--md-sys-color-primary);
-  transition:
-    width var(--md-sys-motion-duration-medium2, 300ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    background-color var(--md-sys-motion-duration-medium2, 300ms);
-}
-.upload-transfer-done .upload-progress-track > div {
-  background: var(--md-sys-color-tertiary);
-}
-.upload-transfer-error .upload-progress-track > div {
-  background: var(--md-sys-color-error);
-}
+.upload-progress.wavy-progress { --wavy-progress-surface: var(--md-sys-color-surface-container-high); }
 .upload-transfer > p {
   margin: 8px 0 0;
   color: var(--md-sys-color-on-surface-variant);

@@ -616,6 +616,14 @@ md-text-button:not(:defined) {
   overflow-y: auto;
   scroll-behavior: smooth;
 }
+.drive-progress-slot {
+  position: sticky;
+  top: 0;
+  margin: 0 32px -16px;
+  height: 16px;
+  z-index: 5;
+  pointer-events: none;
+}
 .content-inner {
   padding: 20px 32px 48px;
   max-width: 1600px;
@@ -912,14 +920,7 @@ md-text-button:not(:defined) {
 .loading-grid > div {
   height: 180px;
   border-radius: 12px;
-  background: linear-gradient(
-    100deg,
-    var(--md-sys-color-surface-container) 20%,
-    var(--md-sys-color-surface-container-high) 40%,
-    var(--md-sys-color-surface-container) 60%
-  );
-  background-size: 250% 100%;
-  animation: shimmer 1.6s infinite;
+  background: var(--md-sys-color-surface-container-high);
 }
 .empty-upload {
   text-align: center;

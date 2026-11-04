@@ -7,6 +7,7 @@ import { IconX, IconDownload } from './icons.js';
 import { FileGlyph } from './Glyph.js';
 import { useSupportDialog } from './support-dialog.js';
 import { MaterialButton } from './material/MaterialButton.js';
+import { WavyProgress } from './material/WavyProgress.js';
 import './support-flows.css';
 
 interface Props {
@@ -72,7 +73,7 @@ export function PreviewModal({ file, onClose }: Props) {
             </div>
           ) : (
             <>
-              {!loaded && (isImage(mime) || asText) && <div role="status" className="preview-loading"><span className="support-spinner" />{t('loading')}</div>}
+              {!loaded && (isImage(mime) || asText) && <div className="preview-loading"><WavyProgress label={t('loading')} /><span role="status">{t('loading')}</span></div>}
               {isImage(mime) && <img key={retry} src={url} alt={file.name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} className={loaded ? '' : 'preview-hidden'} />}
               {isVideo(mime) && <video key={retry} src={url} controls playsInline onError={() => setFailed(true)} />}
               {isAudio(mime) && <div className="preview-audio"><FileGlyph mime={mime} name={file.name} size={94} /><h3>{file.name}</h3><audio key={retry} src={url} controls onError={() => setFailed(true)} /></div>}

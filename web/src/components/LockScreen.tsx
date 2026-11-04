@@ -4,6 +4,7 @@ import { setToken } from '../api/auth.js';
 import { useT } from '../i18n/lang.js';
 import { AuthLayout, AuthSpinner, CloudMark } from './AuthLayout.js';
 import { MaterialButton } from './material/MaterialButton.js';
+import { WavyProgress } from './material/WavyProgress.js';
 
 type Step = 'phone' | 'code' | 'password' | 'pin';
 
@@ -167,6 +168,7 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
     <h1 className="auth-form-title auth-locked-title">{title}</h1>
     <p className="auth-form-description auth-locked-description">{description}</p>
     <form key={step} className="auth-form" onSubmit={submit} aria-busy={busy}>
+      {busy && <WavyProgress className="auth-operation-progress" label={en ? 'Signing in' : 'Memproses masuk'} />}
       {step === 'phone' && <label className="auth-field" htmlFor="login-phone"><span>{t('phoneLabel')}</span><input id="login-phone" name="phone" type="tel" placeholder={en ? '+1 555 123 4567' : '+62 812 3456 7890'} value={phone} onChange={event => setPhone(event.target.value)} disabled={busy} autoFocus autoComplete="tel" required aria-describedby="login-phone-hint" /><small id="login-phone-hint">{en ? 'Include your country code.' : 'Sertakan kode negara Anda.'}</small></label>}
       {step === 'code' && <label className="auth-field" htmlFor="login-code"><span>{en ? 'Telegram verification code' : 'Kode verifikasi Telegram'}</span><input id="login-code" name="code" className="auth-pin-input" type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus placeholder="00000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 8))} disabled={busy} minLength={4} maxLength={8} required /></label>}
       {(step === 'password' || step === 'pin') && <div className="auth-secret-group"><label className="auth-field" htmlFor="login-secret"><span>{step === 'pin' ? t('enterPin') : t('passwordLabel')}</span><input id="login-secret" name={step === 'pin' ? 'pin' : 'telegramPassword'} className={step === 'pin' ? 'auth-pin-input' : undefined} type={showSecret ? 'text' : 'password'} inputMode={step === 'pin' ? 'numeric' : undefined} value={step === 'pin' ? pin : password} onChange={event => step === 'pin' ? setPin(event.target.value.replace(/\D/g, '')) : setPassword(event.target.value)} disabled={busy} autoFocus autoComplete="current-password" required minLength={step === 'pin' ? 4 : undefined} /></label><label className="auth-choice"><input type="checkbox" checked={showSecret} onChange={event => setShowSecret(event.target.checked)} disabled={busy} />{step === 'pin' ? (en ? 'Show PIN' : 'Tampilkan PIN') : (en ? 'Show password' : 'Tampilkan kata sandi')}</label></div>}

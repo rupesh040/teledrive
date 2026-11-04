@@ -81,6 +81,7 @@ For a local production preview, first build `web`, then run the backend with `WE
 
 - Choose **Light**, **Dark**, or **System** under Appearance in the sidebar or on the login screen. The toolbar also provides a quick light/dark toggle. Appearance persists across reloads and System mode follows operating-system changes.
 - Material buttons and ripple state layers use the official Material Web components. Page, dialog, transfer-panel, and theme transitions honor reduced-motion preferences.
+- Loading and transfers use Material Expressive wavy progress indicators. Upload percentages reflect the browser's transfer progress; the indicator switches to an indeterminate wave while Telegram saves the file. Completion and errors stop the animation. Collection transitions and card hover motion also respect reduced-motion preferences.
 
 - Browse **Recents**, **Photos & images**, and **Documents** across all folders, or search your entire drive instantly.
 - Upload multiple files using the upload button or drag and drop. Both use the same transfer queue, with progress and failure feedback.
