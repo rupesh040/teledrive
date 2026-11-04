@@ -9,6 +9,7 @@ import "@fontsource/roboto/latin-400.css";
 import "@fontsource/roboto/latin-500.css";
 import "@fontsource/roboto/latin-700.css";
 import "./index.css";
+import './app-ui.css';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

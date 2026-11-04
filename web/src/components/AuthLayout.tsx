@@ -19,26 +19,22 @@ export function AuthLayout({ children, compact = false }: { children: ReactNode;
       <header className="auth-header">
         <a href="/" className="auth-brand" aria-label="TeleDrive home"><span className="auth-brand-mark"><CloudMark /></span><span>TeleDrive<span className="auth-brand-dot">.</span></span></a>
         <InstallApp className="auth-install-button" />
-        <div className="auth-header-actions"><ThemeToggle /><LangToggle /></div>
       </header>
+      <details className="auth-preferences">
+        <summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" fill="var(--md-sys-color-surface-container-lowest)" /><circle cx="15" cy="17" r="3" fill="var(--md-sys-color-surface-container-lowest)" /></svg>{en ? 'Appearance & language' : 'Tampilan & bahasa'}</summary>
+        <div className="auth-header-actions">
+          <div className="auth-preference-row"><span>{en ? 'Appearance' : 'Tampilan'}</span><ThemeToggle /></div>
+          <div className="auth-preference-row"><span>{en ? 'Language' : 'Bahasa'}</span><LangToggle /></div>
+        </div>
+      </details>
       <HostingNotice />
       <main className="auth-main">
-        {!compact && <section className="auth-story" aria-labelledby="auth-story-title">
-          <span className="auth-eyebrow"><span />{en ? 'A PERSONAL SPACE FOR YOUR FILES' : 'RUANG PRIBADI UNTUK FILE ANDA'}</span>
-          <h1 id="auth-story-title">{en ? 'Your files,' : 'Semua file Anda,'}<br /><span>{en ? 'beautifully at home.' : 'di tempat terbaik.'}</span></h1>
-          <p className="auth-story-copy">{en ? 'A calm, simple place for everything you want to keep. Powered by your own Telegram cloud.' : 'Tempat yang tenang dan sederhana untuk semua yang ingin Anda simpan. Didukung cloud Telegram Anda sendiri.'}</p>
-          <div className="auth-cloud-art" aria-hidden="true">
-            <div className="auth-art-shape" />
-            <div className="auth-art-cloud"><CloudMark size={102} /></div>
-            <div className="auth-art-card auth-art-card--photo"><span className="auth-art-photo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8" /><path d="m4 18 5-6 4 4 3-3 4 5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" /></svg></span><div><strong>{en ? 'A little inspiration' : 'Sedikit inspirasi'}</strong><small>{en ? 'Room for every idea' : 'Ruang untuk setiap ide'}</small></div></div>
-            <div className="auth-art-card auth-art-card--folder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="M3 10h18" stroke="currentColor" strokeWidth="1.5" /></svg><div><strong>{en ? 'Everything, together' : 'Semuanya, bersama'}</strong><small>{en ? 'Organized your way' : 'Tertata sesuai keinginan'}</small></div></div>
-            <span className="auth-art-spark auth-art-spark--one">✦</span><span className="auth-art-spark auth-art-spark--two">✦</span>
-          </div>
-          <div className="auth-story-note"><svg width="17" height="19" viewBox="0 0 20 22" fill="none" aria-hidden="true"><path d="m10 2 7 3v5c0 5-7 9-7 9s-7-4-7-9V5l7-3Z" stroke="currentColor" strokeWidth="1.5" /><path d="m7 10 2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>{en ? 'Your account. Your files. Your space.' : 'Akun Anda. File Anda. Ruang Anda.'}</div>
-        </section>}
-        <section className="auth-form-card">{children}</section>
+        {!compact && <h1 className="sr-only">{en ? 'Connect your Telegram account' : 'Hubungkan akun Telegram Anda'}</h1>}
+        <section className="auth-form-card">
+          {!compact && <div className="auth-card-context"><CloudMark size={19} /><span>{en ? 'Telegram connection' : 'Koneksi Telegram'}</span></div>}
+          {children}
+        </section>
       </main>
-      <footer className="auth-footer"><span>© {new Date().getFullYear()} TeleDrive</span><span>{en ? 'Made for a little more peace of mind.' : 'Dibuat untuk sedikit lebih tenang.'}</span></footer>
     </div>
   );
 }

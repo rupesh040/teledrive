@@ -60,31 +60,41 @@ export function Topbar({
         <AppIcon name="cloud" size={19} />
         <span>{title}</span>
       </div>
-      <div className={`search-field ${focused ? "is-focused" : ""}`}>
-        <IconSearch size={18} />
-        <input
-          ref={input}
-          type="search"
-          aria-label={t("searchPlaceholder")}
-          placeholder={t("searchPlaceholder")}
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-        />
-        {query ? (
-          <button
-            onClick={() => {
-              onQuery("");
-              input.current?.focus();
-            }}
-            aria-label={t("clearSearch")}
-          >
-            <Ripple />
-            <IconX size={15} />
-          </button>
-        ) : (
-          <kbd>/</kbd>
+      <div className="topbar-search-row">
+        <div className={`search-field ${focused ? "is-focused" : ""}`}>
+          <IconSearch size={18} />
+          <input
+            ref={input}
+            type="search"
+            aria-label={t("searchPlaceholder")}
+            placeholder={t("searchPlaceholder")}
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+          />
+          {query ? (
+            <button
+              onClick={() => {
+                onQuery("");
+                input.current?.focus();
+              }}
+              aria-label={t("clearSearch")}
+            >
+              <Ripple />
+              <IconX size={15} />
+            </button>
+          ) : (
+            <kbd>/</kbd>
+          )}
+        </div>
+        {browseControls && (
+          <div className="view-switch" role="group" aria-label={t("viewGrid")}>
+            <button type="button" onClick={() => onView("grid")} className={view === "grid" ? "active" : ""}
+              aria-pressed={view === "grid"} aria-label={t("viewGrid")} title={t("viewGrid")}><Ripple /><IconGrid size={20} /></button>
+            <button type="button" onClick={() => onView("list")} className={view === "list" ? "active" : ""}
+              aria-pressed={view === "list"} aria-label={t("viewList")} title={t("viewList")}><Ripple /><IconList size={20} /></button>
+          </div>
         )}
       </div>
       <div className="topbar-tools">
@@ -120,30 +130,6 @@ export function Topbar({
               ) : (
                 <IconArrowDown size={14} />
               )}
-            </button>
-          </div>
-        )}
-        {browseControls && (
-          <div className="view-switch" role="group" aria-label={t("viewGrid")}>
-            <button
-              onClick={() => onView("grid")}
-              className={view === "grid" ? "active" : ""}
-              aria-pressed={view === "grid"}
-              aria-label={t("viewGrid")}
-              title={t("viewGrid")}
-            >
-              <Ripple />
-              <IconGrid size={17} />
-            </button>
-            <button
-              onClick={() => onView("list")}
-              className={view === "list" ? "active" : ""}
-              aria-pressed={view === "list"}
-              aria-label={t("viewList")}
-              title={t("viewList")}
-            >
-              <Ripple />
-              <IconList size={18} />
             </button>
           </div>
         )}

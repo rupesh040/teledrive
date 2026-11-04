@@ -14,6 +14,7 @@ import { api } from "./api/client.js";
 import { useT } from "./i18n/lang.js";
 import { sizeLabel } from "./lib/format.js";
 import { Sidebar } from "./components/Sidebar.js";
+import { BottomNavigation } from './components/BottomNavigation.js';
 import { Topbar } from "./components/Topbar.js";
 import { Breadcrumb } from "./components/Breadcrumb.js";
 import { FileView } from "./components/FileView.js";
@@ -511,7 +512,7 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
     event.dataTransfer.types.includes("Files");
 
   return (
-    <div className="app-shell">
+    <div className="app-shell native-app">
       <Sidebar
         stats={stats}
         route={route}
@@ -574,35 +575,22 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
           >
             {route === "drive" && !current && !searching && (
               <section
-                className="cloud-overview"
+                className="app-storage-overview"
                 aria-label={t("personalCloud")}
               >
-                <div className="overview-copy">
-                  <span className="eyebrow">{t("personalCloud")}</span>
-                  <h2>{t("spaceTitle")}</h2>
-                  <p>{t("spaceHint")}</p>
+                <div className="app-storage-heading">
+                  <span className="app-storage-mark"><AppIcon name="cloud" size={26} /></span>
+                  <div><h2>{t('storage')}</h2><span>{t('privateHint')}</span></div>
+                  <AppIcon name="shield" size={20} />
                 </div>
-                <div className="overview-stats">
+                <div className="app-storage-stats">
                   <div>
-                    <span className="overview-icon">
-                      <AppIcon name="document" size={19} />
-                    </span>
                     <strong>{stats?.totalFiles ?? "—"}</strong>
                     <small>{t("storedFiles")}</small>
                   </div>
                   <div>
-                    <span className="overview-icon purple">
-                      <AppIcon name="cloud" size={20} />
-                    </span>
                     <strong>{stats ? sizeLabel(stats.totalBytes) : "—"}</strong>
                     <small>{t("storageUsed")}</small>
-                  </div>
-                  <div className="privacy-stat">
-                    <span className="overview-icon green">
-                      <AppIcon name="shield" size={20} />
-                    </span>
-                    <strong>{t("privateStorage")}</strong>
-                    <small>{t("privateHint")}</small>
                   </div>
                 </div>
               </section>
@@ -612,7 +600,7 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
                 <Breadcrumb trail={trail} onNavigate={navigate} />
               </div>
             )}
-            <div className="page-heading">
+            <div className="page-heading" data-searching={searching}>
               <div>
                 <h1>{title}</h1>
                 <p>{subtitle}</p>
@@ -862,6 +850,8 @@ export function App({ onLoggedOut }: { onLoggedOut?: () => void }) {
             {t("privateStorage")}
           </span>
         </footer>
+        {canUploadHere && <UploadButton floating onFiles={files => void uploadFiles(files, destination)} />}
+        <BottomNavigation route={route} drawerOpen={mobileOpen} onRoute={changeRoute} onMore={() => setMobileOpen(true)} />
       </main>
       <PreviewModal file={preview} onClose={() => setPreview(null)} />
       <UploadQueue

@@ -1,0 +1,187 @@
+/* A contained desktop workspace and touch-first mobile app chrome. */
+.native-app {
+  --app-bottom-bar-height: calc(80px + env(safe-area-inset-bottom, 0px));
+  min-height: 0;
+}
+.native-app .main-pane { position: relative; }
+.native-app .sidebar { width: 256px; padding-top: 24px; overflow-y: auto; }
+.native-app .brand { font-size: 22px; }
+.native-app .sidebar-nav { margin-top: 28px; }
+.native-app .nav-item { min-height: 48px; border-radius: 16px; }
+.native-app .nav-item.active { font-size: 14px; }
+.native-app .topbar {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(240px, 600px) auto;
+  gap: 20px;
+  padding: 20px 28px;
+}
+.native-app .topbar-location { min-width: 0; color: var(--md-sys-color-on-surface); font-weight: 500; font-size: 18px; }
+.native-app .topbar-location > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.native-app .topbar-location > svg { flex-shrink: 0; color: var(--md-sys-color-primary); }
+.native-app .topbar-search-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.native-app .search-field { max-width: none; margin: 0; min-width: 0; height: 48px; background: var(--md-sys-color-surface-container); }
+.native-app .search-field button { flex-shrink: 0; width: 44px; height: 44px; }
+.native-app .view-switch { flex-shrink: 0; border-color: var(--md-sys-color-outline-variant); }
+.native-app .view-switch button { min-width: 44px; height: 44px; }
+.native-app .topbar-tools { gap: 8px; }
+.native-app .refresh-button { display: inline-flex; }
+.native-app .content-inner { padding: 16px 28px 40px; max-width: 1400px; }
+.native-app .page-heading { margin-bottom: 24px; }
+.native-app .page-heading h1 { font-size: 26px; line-height: 34px; font-weight: 500; margin-bottom: 4px; }
+.native-app .page-heading p { line-height: 22px; }
+.native-app .content-toolbar { border: 0; padding-bottom: 0; margin-bottom: 20px; }
+.native-app .filter-tabs button { min-height: 40px; border-radius: 999px; padding-inline: 16px; white-space: nowrap; }
+.native-app .file-card { border-color: transparent; border-radius: 20px; }
+.native-app .file-card.is-selected,
+.native-app .file-card.is-drop-target { border-color: var(--md-sys-color-primary); }
+.native-app .file-card-art { border-radius: 20px 20px 0 0; }
+.app-storage-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 24px;
+  margin-bottom: 28px;
+  border-radius: 24px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.app-storage-heading { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.app-storage-heading > div { min-width: 0; flex: 1; }
+.app-storage-heading h2 { font-size: 16px; font-weight: 500; line-height: 24px; margin: 0 0 2px; }
+.app-storage-heading div > span { display: block; font-size: 12px; line-height: 18px; opacity: .85; }
+.app-storage-heading > svg { flex-shrink: 0; }
+.app-storage-mark { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 16px; background: color-mix(in srgb, currentColor 10%, transparent); }
+.app-storage-stats { display: grid; grid-template-columns: repeat(2, minmax(80px, auto)); gap: 32px; padding-left: 28px; border-left: 1px solid color-mix(in srgb, currentColor 16%, transparent); }
+.app-storage-stats > div { display: grid; gap: 2px; }
+.app-storage-stats strong { font-size: 22px; line-height: 28px; font-weight: 500; }
+.app-storage-stats small { font-size: 12px; line-height: 18px; opacity: .85; }
+.app-bottom-navigation, .app-upload-fab { display: none; }
+
+@media (max-width: 1100px) and (min-width: 801px) {
+  .native-app .sidebar { width: 224px; padding-inline: 12px; }
+  .native-app .topbar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "location tools" "search search"; gap: 12px; padding-inline: 20px; }
+  .native-app .topbar-location { grid-area: location; font-size: 16px; }
+  .native-app .topbar-tools { grid-area: tools; }
+  .native-app .topbar-search-row { grid-area: search; }
+  .native-app .content-inner { padding-inline: 20px; }
+  .app-storage-overview { grid-template-columns: 1fr; gap: 20px; }
+  .app-storage-stats { border-left: 0; border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent); padding: 16px 0 0; }
+}
+
+@media (max-width: 800px) {
+  .native-app { padding: 0; height: 100dvh; min-height: 0; background: var(--md-sys-color-surface); }
+  .native-app .main-pane { border-radius: 0; background: var(--md-sys-color-surface); }
+  .native-app .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "location tools" "search search";
+    min-height: 0;
+    gap: 12px;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 16px;
+    background: var(--md-sys-color-surface);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .native-app .topbar-location { grid-area: location; gap: 8px; font-size: 20px; }
+  .native-app .topbar-location > span { display: block; }
+  .native-app .topbar-location > svg { display: none; }
+  .native-app .topbar-tools { grid-area: tools; }
+  .native-app .topbar .sort-control { display: none; }
+  .native-app .topbar-search-row { grid-area: search; gap: 12px; }
+  .native-app .topbar .icon-button { width: 44px; height: 44px; }
+  .native-app .topbar-location .icon-button { background: var(--md-sys-color-surface-container-high); }
+  .native-app .search-field { height: 48px; padding-inline: 16px; border-radius: 16px; background: var(--md-sys-color-surface-container-high); }
+  .native-app .search-field input { font-size: 16px; }
+  .native-app .view-switch { border-radius: 16px; }
+  .native-app .content-inner { padding: 8px max(16px, env(safe-area-inset-right, 0px)) 96px max(16px, env(safe-area-inset-left, 0px)); }
+  .native-app .page-heading { align-items: center; gap: 12px; flex-wrap: nowrap; margin-bottom: 20px; }
+  .native-app .page-heading > div:first-child { min-width: 0; }
+  .native-app .page-heading h1 { font-size: 24px; line-height: 32px; margin: 0; }
+  .native-app .page-heading:not([data-searching="true"]) p { display: none; }
+  .native-app .page-actions { width: auto; gap: 8px; }
+  .native-app .page-actions > .material-button { min-width: 0; flex: none; --md-outlined-button-leading-space: 12px; --md-outlined-button-trailing-space: 12px; }
+  .native-app .page-actions > .material-button:last-child { display: none; }
+  .native-app .content-toolbar { flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .native-app .filter-tabs { flex: 1 1 100%; min-width: 0; max-width: 100%; overflow-x: auto; padding: 2px 0 4px; gap: 8px; scrollbar-width: none; }
+  .native-app .filter-tabs::-webkit-scrollbar { display: none; }
+  .native-app .filter-tabs button { flex-shrink: 0; font-size: 13px; min-height: 40px; }
+  .native-app .mobile-sort { margin-left: 0; min-height: 44px; }
+  .native-app .mobile-sort select { font-size: 13px; max-width: 100px; min-height: 44px; }
+  .native-app .mobile-sort button { min-width: 44px; min-height: 44px; }
+  .native-app .content-toolbar .item-count { display: block; margin-left: auto; font-size: 12px; }
+  .native-app .selection-toolbar { width: 100%; min-width: 0; gap: 8px; }
+  .native-app .selection-count { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .native-app .selection-actions { flex-shrink: 0; gap: 0; }
+  .native-app .selection-actions .icon-button { width: 40px; height: 44px; }
+  .native-app .drive-footer { display: none; }
+  .native-app .file-empty-drop, .native-app .empty-upload { display: none; }
+  .native-app .drive-progress-slot { margin-inline: 16px; }
+  .app-storage-overview { grid-template-columns: 1fr; gap: 20px; padding: 20px; margin-bottom: 24px; border-radius: 24px; }
+  .app-storage-heading { gap: 12px; }
+  .app-storage-heading h2 { font-size: 15px; }
+  .app-storage-stats { grid-template-columns: 1fr 1fr; gap: 16px; border-left: 0; padding: 16px 0 0; border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent); }
+  .app-storage-stats strong { font-size: 24px; line-height: 30px; }
+  .app-bottom-navigation {
+    position: relative;
+    z-index: 25;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: var(--app-bottom-bar-height);
+    padding: 8px max(8px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    background: var(--md-sys-color-surface-container);
+  }
+  .app-bottom-navigation > button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; border: 0; background: transparent; color: var(--md-sys-color-on-surface-variant); min-width: 0; font-size: 12px; line-height: 16px; font-weight: 500; cursor: pointer; }
+  .app-navigation-icon { display: grid; place-items: center; position: relative; isolation: isolate; width: 64px; max-width: 100%; height: 32px; border-radius: 16px; transition: background-color 200ms var(--md-sys-motion-easing-standard), color 200ms var(--md-sys-motion-easing-standard); }
+  .app-bottom-navigation .is-active { color: var(--md-sys-color-on-secondary-container); }
+  .app-bottom-navigation .is-active .app-navigation-icon { background: var(--md-sys-color-secondary-container); }
+  .app-bottom-navigation > button:focus-visible { outline: 3px solid var(--md-sys-color-primary); outline-offset: 0; border-radius: 16px; }
+  .app-upload-fab {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 24;
+    isolation: isolate;
+    right: max(20px, env(safe-area-inset-right, 0px));
+    bottom: calc(var(--app-bottom-bar-height) + 16px);
+    min-height: 56px;
+    padding: 16px 20px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    box-shadow: var(--md-sys-elevation-level2);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: box-shadow 200ms var(--md-sys-motion-easing-standard), transform 200ms var(--md-sys-motion-easing-standard);
+    animation: material-page-enter 300ms var(--md-sys-motion-easing-emphasized-decelerate) backwards;
+  }
+  .app-upload-fab:active { transform: scale(.97); box-shadow: var(--md-sys-elevation-level1); }
+  .native-app .upload-panel { right: 12px; bottom: calc(var(--app-bottom-bar-height) + 88px); width: calc(100% - 24px); max-height: calc(100dvh - var(--app-bottom-bar-height) - 200px); }
+  .native-app .upload-panel-scroll { max-height: min(240px, calc(100dvh - var(--app-bottom-bar-height) - 285px)); }
+  .native-app .sidebar { width: 320px; max-width: calc(100vw - 24px); padding: calc(20px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; z-index: 90; }
+  .native-app .sidebar-scrim { z-index: 89; }
+  .native-app .sidebar-bottom { margin-top: 24px; padding-top: 0; }
+  .native-app .sidebar-nav { margin-top: 24px; }
+  .native-app .sidebar-folders { flex: none; min-height: 0; max-height: 180px; }
+  /* Action dialogs are portaled to body, outside the app shell. */
+  .support-backdrop { z-index: 100; padding: 16px; }
+  .support-dialog { max-height: calc(100dvh - 32px); }
+  .native-app:has(.search-field input:focus) .app-bottom-navigation,
+  .native-app:has(.search-field input:focus) .app-upload-fab,
+  .native-app:has(.search-field input:focus) .upload-panel { display: none; }
+}
+@media (max-width: 360px) {
+  .native-app .page-actions > .material-button span:not([slot="icon"]) { font-size: 12px; }
+  .native-app .page-heading h1 { font-size: 22px; }
+  .native-app .topbar-location { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-navigation-icon, .app-upload-fab { animation: none; transition: none; }
+  .app-upload-fab:active { transform: none; }
+}

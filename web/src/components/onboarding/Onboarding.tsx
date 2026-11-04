@@ -57,8 +57,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   }
 
   const index = step === 'creds' ? 0 : step === 'pin' ? 2 : 1;
-  const title = step === 'creds' ? (en ? 'Make yourself at home.' : 'Selamat datang di rumah.') : step === 'code' ? (en ? 'Check your Telegram.' : 'Periksa Telegram Anda.') : step === 'password' ? (en ? 'One more little step.' : 'Satu langkah lagi.') : t('setPinTitle');
-  const description = step === 'creds' ? (en ? 'Connect your Telegram account to create your personal cloud. It only takes a moment.' : 'Hubungkan akun Telegram untuk membuat cloud pribadi Anda. Hanya perlu beberapa saat.') : step === 'code' ? `${t('otpHint')} ${phone}` : step === 'password' ? (en ? 'Your account uses two-step verification. Enter your Telegram password to continue.' : 'Akun Anda menggunakan verifikasi dua langkah. Masukkan kata sandi Telegram untuk melanjutkan.') : t('setPinHint');
+  const title = step === 'creds' ? (en ? 'Connect Telegram' : 'Hubungkan Telegram') : step === 'code' ? (en ? 'Enter your code' : 'Masukkan kode Anda') : step === 'password' ? (en ? 'Two-step verification' : 'Verifikasi dua langkah') : t('setPinTitle');
+  const description = step === 'creds' ? (en ? 'Add your Telegram connection to start using your drive.' : 'Tambahkan koneksi Telegram untuk mulai menggunakan drive Anda.') : step === 'code' ? `${t('otpHint')} ${phone}` : step === 'password' ? (en ? 'Your account uses two-step verification. Enter your Telegram password to continue.' : 'Akun Anda menggunakan verifikasi dua langkah. Masukkan kata sandi Telegram untuk melanjutkan.') : t('setPinHint');
   const buttonLabel = step === 'creds' ? (en ? 'Connect Telegram' : 'Hubungkan Telegram') : step === 'code' ? t('verify') : step === 'password' ? t('continueBtn') : (en ? 'Create account' : 'Buat akun');
   const waitingLabel = step === 'creds' ? (en ? 'Connecting…' : 'Menghubungkan…') : step === 'pin' ? (en ? 'Creating your space…' : 'Menyiapkan ruang Anda…') : (en ? 'Verifying…' : 'Memverifikasi…');
 

@@ -85,6 +85,7 @@ export function Sidebar({
         />
       )}
       <aside
+        id="drive-navigation"
         ref={panel}
         className={`sidebar ${mobileOpen ? "is-open" : ""}`}
         aria-label={t("library")}
@@ -93,7 +94,7 @@ export function Sidebar({
           if (!isMobile || !mobileOpen || event.key !== "Tab") return;
           const nodes = Array.from(
             panel.current?.querySelectorAll<HTMLElement>(
-              "button:not(:disabled),a[href]",
+              'button:not(:disabled),a[href],md-filled-button:not([disabled]),md-filled-tonal-button:not([disabled]),md-outlined-button:not([disabled]),md-text-button:not([disabled]),[tabindex="0"]',
             ) ?? [],
           ).filter((element) => element.getClientRects().length > 0);
           const first = nodes[0],

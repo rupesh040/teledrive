@@ -80,6 +80,7 @@ For a local production preview, first build `web`, then run the backend with `WE
 ## Notes
 
 - Choose **Light**, **Dark**, or **System** under Appearance in the sidebar or on the login screen. The toolbar also provides a quick light/dark toggle. Appearance persists across reloads and System mode follows operating-system changes.
+- The mobile app has bottom navigation for Files, Recents, Photos, and More, plus a floating upload action. More opens the full navigation, account, and preferences drawer. The login screen groups theme and language under **Appearance & language**.
 - Material buttons and ripple state layers use the official Material Web components. Page, dialog, transfer-panel, and theme transitions honor reduced-motion preferences.
 - Loading and transfers use Material Expressive wavy progress indicators. Upload percentages reflect the browser's transfer progress; the indicator switches to an indeterminate wave while Telegram saves the file. Completion and errors stop the animation. Collection transitions and card hover motion also respect reduced-motion preferences.
 
