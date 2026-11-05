@@ -74,14 +74,13 @@ export const api = {
       body: JSON.stringify({ loginId }),
     }).then(J),
   setupStart: (
-    apiId: number,
-    apiHash: string,
     phone: string,
-  ): Promise<{ loginId: string; needs: "code" }> =>
+    remember = false,
+  ): Promise<{ loginId: string; needs: "code"; retryAfter: number }> =>
     request("/api/setup/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ apiId, apiHash, phone }),
+      body: JSON.stringify({ phone, remember }),
     }).then(J),
   setupVerify: (
     loginId: string,
@@ -101,22 +100,27 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ loginId, password }),
     }).then(J),
-  setupPin: (pin: string): Promise<{ ok: boolean }> =>
+  setupCancel: (loginId: string): Promise<{ ok: boolean }> =>
+    request('/api/setup/cancel', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loginId }),
+    }).then(J),
+  setupPin: (loginId: string, pin: string, remember = false): Promise<{ ok: boolean; token: string }> =>
     request("/api/setup/pin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin }),
+      body: JSON.stringify({ loginId, pin, remember }),
     }).then(J),
-  unlock: (pin: string): Promise<{ token: string }> =>
+  unlock: (phone: string, pin: string): Promise<{ token: string }> =>
     request("/api/auth/unlock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin }),
+      body: JSON.stringify({ phone, pin }),
     }).then(J),
-  login: (pin: string, remember = false): Promise<{ token: string }> =>
+  login: (phone: string, pin: string, remember = false): Promise<{ token: string }> =>
     request('/api/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, remember }),
+      body: JSON.stringify({ phone, pin, remember }),
     }).then(J),
   logout: (): Promise<{ ok: boolean }> =>
     request("/api/auth/logout", {

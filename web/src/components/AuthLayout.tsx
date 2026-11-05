@@ -4,7 +4,7 @@ import { LangToggle } from './LangToggle.js';
 import { ThemeToggle } from '../theme/ThemeToggle.js';
 import { InstallApp } from '../pwa/InstallApp.js';
 import { HostingNotice } from './HostingNotice.js';
-import { WavySpinner } from './material/WavyProgress.js';
+import { LoadingSpinner } from './material/Progress.js';
 import './auth.css';
 
 export function CloudMark({ size = 28 }: { size?: number }) {
@@ -40,5 +40,5 @@ export function AuthLayout({ children, compact = false }: { children: ReactNode;
 }
 
 export function AuthSpinner() {
-  return <WavySpinner />;
+  return <LoadingSpinner />;
 }

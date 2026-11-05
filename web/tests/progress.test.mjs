@@ -9,7 +9,7 @@ import { build } from 'esbuild';
 
 const { outputFiles } = await build({
   stdin: {
-    contents: `export { WavyProgress } from './src/components/material/WavyProgress.tsx';
+    contents: `export { LinearProgress } from './src/components/material/Progress.tsx';
       export { UploadQueue } from './src/components/UploadQueue.tsx';
       export { LangProvider } from './src/i18n/lang.tsx';`,
     resolveDir: fileURLToPath(new URL('..', import.meta.url)),
@@ -20,8 +20,8 @@ const { outputFiles } = await build({
 });
 const subject = { exports: {} };
 vm.runInNewContext(outputFiles[0].text, { module: subject, exports: subject.exports, require: createRequire(import.meta.url), console });
-const { WavyProgress, UploadQueue, LangProvider } = subject.exports;
-const progress = props => renderToStaticMarkup(React.createElement(WavyProgress, { label: 'Transfer', ...props }));
+const { LinearProgress, UploadQueue, LangProvider } = subject.exports;
+const progress = props => renderToStaticMarkup(React.createElement(LinearProgress, { label: 'Transfer', ...props }));
 const queue = items => renderToStaticMarkup(React.createElement(LangProvider, null, React.createElement(UploadQueue, { items, onClose() {} })));
 
 test('indeterminate loading has an accessible name without claiming a percentage', () => {
@@ -57,12 +57,11 @@ test('failed uploads retain their actual percentage and report failure', () => {
   assert.match(html, /aria-valuetext="Upload failed"/);
 });
 
-test('multiple wave indicators have distinct SVG references and inactive ones stay out of accessibility', () => {
+test('inactive progress stays out of the accessibility tree', () => {
   const html = renderToStaticMarkup(React.createElement(React.Fragment, null,
-    React.createElement(WavyProgress, { label: 'First', value: 10 }),
-    React.createElement(WavyProgress, { label: 'Second', active: false }),
+    React.createElement(LinearProgress, { label: 'First', value: 10 }),
+    React.createElement(LinearProgress, { label: 'Second', active: false }),
   ));
-  const ids = [...html.matchAll(/<pattern id="([^"]+)"/g)].map(match => match[1]);
-  assert.equal(new Set(ids).size, 2);
   assert.equal([...html.matchAll(/role="progressbar"/g)].length, 1);
+  assert.match(html, /aria-hidden="true"/);
 });

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useT } from '../i18n/lang.js';
 import { IconX, IconCheck, IconUpload, IconChevron } from './icons.js';
 import './support-flows.css';
-import { WavyProgress } from './material/WavyProgress.js';
+import { LinearProgress } from './material/Progress.js';
 
 export interface UploadItem {
   id: number;
@@ -46,7 +46,7 @@ export function UploadQueue({ items, onClose }: Props) {
               : item.status === 'error' ? <span className="upload-failed-label">{lang === 'en' ? 'Failed' : 'Gagal'}</span>
               : <small>{progress === 100 ? (lang === 'en' ? 'Saving…' : 'Menyimpan…') : `${progress}%`}</small>}
           </div>
-          <WavyProgress className="upload-progress" label={item.name} value={progress}
+          <LinearProgress className="upload-progress" label={item.name} value={progress}
             indeterminate={saving} state={item.status === 'done' ? 'complete' : item.status === 'error' ? 'error' : 'active'}
             valueText={item.status === 'error' ? (lang === 'en' ? 'Upload failed' : 'Unggahan gagal') : item.status === 'done' ? (lang === 'en' ? 'Complete' : 'Selesai') : saving ? (lang === 'en' ? 'Saving to Telegram' : 'Menyimpan ke Telegram') : `${progress}%`} />
           {item.status === 'error' && <p>{lang === 'en' ? 'Upload this file again to retry.' : 'Unggah file ini lagi untuk mencoba kembali.'}</p>}

@@ -313,8 +313,7 @@
   font-size: 14px;
   line-height: 20px;
 }
-.preview-loading > .wavy-progress {
-  --wavy-progress-surface: var(--md-sys-color-surface-container-low);
+.preview-loading > .linear-progress {
   width: min(240px, 70%);
 }
 .preview-empty {
@@ -668,8 +667,7 @@
 .upload-panel-collapse.is-collapsed {
   grid-template-rows: 0fr;
 }
-.upload-panel-collapse.is-collapsed .wavy-progress-path,
-.upload-panel-collapse.is-collapsed .wavy-progress-indicator { animation-play-state: paused; }
+.upload-panel-collapse.is-collapsed .linear-progress-indicator { animation-play-state: paused; }
 .upload-panel-items {
   min-height: 0;
   overflow: hidden;
@@ -716,7 +714,6 @@
   font-size: 12px;
   line-height: 16px;
 }
-.upload-progress.wavy-progress { --wavy-progress-surface: var(--md-sys-color-surface-container-high); }
 .upload-transfer > p {
   margin: 8px 0 0;
   color: var(--md-sys-color-on-surface-variant);

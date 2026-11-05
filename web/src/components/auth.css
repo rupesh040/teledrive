@@ -209,15 +209,13 @@
   gap: 24px;
   animation: auth-enter 300ms cubic-bezier(0.2, 0, 0, 1) both;
 }
-.auth-operation-progress.wavy-progress {
-  --wavy-progress-surface: var(--md-sys-color-surface-container-lowest);
+.auth-operation-progress.linear-progress {
   position: absolute;
   top: -24px;
   inset-inline: 0;
   animation: auth-enter 200ms var(--md-sys-motion-easing-standard) both;
 }
-.auth-boot-progress.wavy-progress {
-  --wavy-progress-surface: var(--md-sys-color-surface-container-lowest);
+.auth-boot-progress.linear-progress {
   max-width: 240px;
 }
 .auth-field {

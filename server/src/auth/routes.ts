@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { bearerToken } from './requestToken.js';
 import { tokenStore, type TokenStore } from './tokens.js';
-import { TelegramLoginError, type ReturningLoginFlow } from '../telegram/returningLogin.js';
+import { normalizeTelegramPhone, TelegramLoginError, type ReturningLoginFlow } from '../telegram/returningLogin.js';
 
 interface AccountIdentity { account_name: string | null; account_phone: string | null }
 export interface LoginAccountRepo {
@@ -15,12 +15,13 @@ interface AuthDependencies {
   now?: () => number;
   telegramLogin?: ReturningLoginFlow;
   ephemeralStorage?: boolean;
+  phoneSignupAvailable?: () => boolean;
 }
 const MAX_FAILURES = 5;
 const COOLDOWN_MS = 30_000;
 const ATTEMPT_WINDOW_MS = 5 * 60_000;
 
-export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, telegramLogin, ephemeralStorage = false }: AuthDependencies) {
+export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, telegramLogin, ephemeralStorage = false, phoneSignupAvailable = () => false }: AuthDependencies) {
   const router = Router();
   const failures = new Map<string, { count: number; expiresAt: number; blockedUntil: number }>();
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
@@ -32,6 +33,7 @@ export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, te
     res.json({
       authenticated,
       configured,
+      phoneSignupAvailable: phoneSignupAvailable(),
       account: account ? { name: account.account_name, phone: account.account_phone } : null,
       ...(ephemeralStorage ? { ephemeralStorage: true } : {}),
     });
@@ -52,13 +54,15 @@ export function createAuthRouter({ repo, tokens = tokenStore, now = Date.now, te
       return res.status(429).json({ error: 'Too many incorrect PIN attempts. Please try again shortly.', code: 'TOO_MANY_ATTEMPTS', retryAfter });
     };
     if (attempt && attempt.blockedUntil > timestamp) return throttled(attempt.blockedUntil);
-    const { pin, remember } = req.body ?? {};
-    if (typeof pin !== 'string' || !/^\d{4,}$/.test(pin) || !repo.verifyPin(pin)) {
+    const { phone, pin, remember } = req.body ?? {};
+    const normalizedPhone = typeof phone === 'string' && phone.trim().startsWith('+') ? normalizeTelegramPhone(phone) : null;
+    const accountPhone = normalizeTelegramPhone(repo.get()?.account_phone ?? '');
+    if (!normalizedPhone || normalizedPhone !== accountPhone || typeof pin !== 'string' || pin.length > 1024 || !/^\d{4,}$/.test(pin) || !repo.verifyPin(pin)) {
       const next = { count: (attempt?.count ?? 0) + 1, expiresAt: timestamp + ATTEMPT_WINDOW_MS, blockedUntil: 0 };
       if (next.count >= MAX_FAILURES) next.blockedUntil = timestamp + COOLDOWN_MS;
       failures.set(key, next);
       if (next.blockedUntil) return throttled(next.blockedUntil);
-      return res.status(401).json({ error: 'Incorrect PIN.', code: 'INVALID_PIN' });
+      return res.status(401).json({ error: 'Incorrect phone number or PIN.', code: 'INVALID_PIN' });
     }
     failures.delete(key);
     return res.json({ token: tokens.issueToken(remember === true) });

@@ -39,6 +39,7 @@ export const selKey = (kind: ItemKind, id: number): string => `${kind}:${id}`;
 export interface SetupStatus {
   configured: boolean;
   account: { name: string | null; phone: string | null } | null;
+  phoneSignupAvailable?: boolean;
 }
 
 export interface AuthSession extends SetupStatus {

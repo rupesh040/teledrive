@@ -50,4 +50,26 @@ describe('app_config repo', () => {
     expect(repo.get()).toBeUndefined();
     expect(repo.isConfigured()).toBe(false);
   });
+
+  it('commits verified signup with its PIN and never replaces a completed account', () => {
+    const account = { apiId: 123, apiHash: 'hash', session: 'verified-session', channelId: '999', name: 'Test', phone: '+15551234567', pin: '1234' };
+    repo.completeSetup(account);
+    const original = repo.get();
+    expect(repo.isConfigured()).toBe(true);
+    expect(repo.verifyPin('1234')).toBe(true);
+    expect(() => repo.completeSetup({ ...account, phone: '+15559999999', pin: '9999' })).toThrow();
+    expect(repo.get()).toEqual(original);
+    expect(repo.verifyPin('9999')).toBe(false);
+  });
+
+  it('can complete an old partial configuration with empty session or channel fields', () => {
+    repo.saveCredentials(12, 'old');
+    repo.saveSession('');
+    repo.saveChannel('');
+    repo.setPin('9999');
+    expect(repo.isConfigured()).toBe(false);
+    repo.completeSetup({ apiId: 123, apiHash: 'hash', session: 'verified-session', channelId: '999', name: 'Test', phone: '+15551234567', pin: '1234' });
+    expect(repo.isConfigured()).toBe(true);
+    expect(repo.verifyPin('1234')).toBe(true);
+  });
 });

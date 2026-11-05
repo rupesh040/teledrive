@@ -14,6 +14,16 @@ export interface AppConfigRow {
   created_at: string | null;
 }
 
+export interface NewAccount {
+  apiId: number;
+  apiHash: string;
+  session: string;
+  channelId: string;
+  name: string;
+  phone: string;
+  pin: string;
+}
+
 export function makeAppConfigRepo(db: DB) {
   // Pastikan baris tunggal id=1 selalu ada sebelum UPDATE.
   function ensureRow(): void {
@@ -43,6 +53,24 @@ export function makeAppConfigRepo(db: DB) {
       ensureRow();
       db.prepare('UPDATE app_config SET account_name = ?, account_phone = ? WHERE id = 1')
         .run(name, phone);
+    },
+    completeSetup(account: NewAccount): void {
+      const { hash, salt } = hashPin(account.pin);
+      // A single statement commits the verified identity and PIN together. A late
+      // signup challenge cannot replace an account that has already been created.
+      const result = db.prepare(`INSERT INTO app_config
+        (id, api_id, api_hash, session, channel_id, account_name, account_phone, pin_hash, pin_salt, created_at)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET api_id = excluded.api_id, api_hash = excluded.api_hash,
+          session = excluded.session, channel_id = excluded.channel_id,
+          account_name = excluded.account_name, account_phone = excluded.account_phone,
+          pin_hash = excluded.pin_hash, pin_salt = excluded.pin_salt, created_at = excluded.created_at
+        WHERE coalesce(length(app_config.session), 0) = 0
+          OR coalesce(length(app_config.channel_id), 0) = 0
+          OR coalesce(length(app_config.pin_hash), 0) = 0`)
+        .run(account.apiId, account.apiHash, account.session, account.channelId,
+          account.name, account.phone, hash, salt, new Date().toISOString());
+      if (Number(result.changes) !== 1) throw new Error('Account already created. Sign in instead.');
     },
     setPin(pin: string): void {
       ensureRow();

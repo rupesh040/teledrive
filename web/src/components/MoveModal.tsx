@@ -6,7 +6,7 @@ import { IconX, IconHome, IconCheck, IconMove } from './icons.js';
 import { FolderGlyph } from './Glyph.js';
 import { useSupportDialog } from './support-dialog.js';
 import { MaterialButton } from './material/MaterialButton.js';
-import { WavySpinner } from './material/WavyProgress.js';
+import { LoadingSpinner } from './material/Progress.js';
 import './support-flows.css';
 
 interface Props {
@@ -92,7 +92,7 @@ export function MoveModal({ items, onDone, onClose }: Props) {
         </header>
         <p className="move-description">{t('chooseTarget')}</p>
         <div className="move-destinations" aria-busy={folders === null && !error}>
-          {folders === null && !error ? <p className="support-loading" role="status"><WavySpinner />{t('loading')}</p> : folders !== null && <>
+          {folders === null && !error ? <p className="support-loading" role="status"><LoadingSpinner />{t('loading')}</p> : folders !== null && <>
             <button disabled={busy} onClick={() => setDestination(null)} className={`move-destination ${destination === null ? 'is-selected' : ''}`} aria-pressed={destination === null}>
               <IconHome size={24} /><span>{t('myDrive')}</span>{destination === null && <IconCheck size={18} />}
             </button>
@@ -105,7 +105,7 @@ export function MoveModal({ items, onDone, onClose }: Props) {
         </div>
         <footer className="support-dialog-footer">
           <MaterialButton disabled={busy} variant="text" onClick={close}>{lang === 'en' ? 'Cancel' : 'Batal'}</MaterialButton>
-          <MaterialButton disabled={busy || folders === null} icon={busy ? <WavySpinner /> : <IconMove size={18} />} onClick={move}>{busy ? t('loading') : (lang === 'en' ? 'Move here' : 'Pindahkan ke sini')}</MaterialButton>
+          <MaterialButton disabled={busy || folders === null} icon={busy ? <LoadingSpinner /> : <IconMove size={18} />} onClick={move}>{busy ? t('loading') : (lang === 'en' ? 'Move here' : 'Pindahkan ke sini')}</MaterialButton>
         </footer>
       </div>
     </div>

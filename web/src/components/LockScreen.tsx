@@ -4,11 +4,11 @@ import { setToken } from '../api/auth.js';
 import { useT } from '../i18n/lang.js';
 import { AuthLayout, AuthSpinner, CloudMark } from './AuthLayout.js';
 import { MaterialButton } from './material/MaterialButton.js';
-import { WavyProgress } from './material/WavyProgress.js';
+import { LinearProgress } from './material/Progress.js';
 
 type Step = 'phone' | 'code' | 'password' | 'pin';
 
-export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: () => void; accountReady?: boolean }) {
+export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
   const { t, lang } = useT();
   const en = lang === 'en';
   const [step, setStep] = useState<Step>('phone');
@@ -30,6 +30,7 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
   const resendSeconds = Math.max(0, Math.ceil((resendUntil - now) / 1000));
   const retryUntil = step === 'pin' ? pinRetryUntil : telegramRetryUntil;
   const retrySeconds = Math.max(0, Math.ceil((retryUntil - now) / 1000));
+  const submitRetrySeconds = step === 'phone' ? Math.max(retrySeconds, resendSeconds) : retrySeconds;
 
   useEffect(() => {
     mounted.current = true;
@@ -60,16 +61,30 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
   }
 
   function changeStep(next: 'phone' | 'pin') {
+    if (next === 'pin') {
+      const normalized = normalizePhone();
+      if (!normalized) return;
+      setPhone(normalized);
+    }
     generation.current++;
     discardChallenge();
     setStep(next); setCode(''); setPassword(''); setPin(''); setShowSecret(false); setError(null);
   }
 
-  function showError(cause: unknown) {
+  function normalizePhone() {
+    const normalized = phone.trim().replace(/[\s()-]/g, '');
+    if (!/^\+[1-9]\d{5,14}$/.test(normalized)) {
+      setError(en ? 'Include your country code, for example +1 555 123 4567.' : 'Sertakan kode negara, misalnya +62 812 3456 7890.');
+      return null;
+    }
+    return normalized;
+  }
+
+  function showError(cause: unknown, method: 'pin' | 'telegram' = step === 'pin' ? 'pin' : 'telegram') {
     if (cause instanceof ApiError) {
       if (cause.retryAfter) {
         const until = Date.now() + cause.retryAfter * 1000;
-        if (step === 'pin') setPinRetryUntil(until);
+        if (method === 'pin') setPinRetryUntil(until);
         else setTelegramRetryUntil(until);
       }
       const messages: Record<string, [string, string]> = {
@@ -77,7 +92,7 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
         ACCOUNT_MISMATCH: ['Use the Telegram number connected to this drive.', 'Gunakan nomor Telegram yang terhubung ke drive ini.'],
         INVALID_CODE: ['That code is incorrect. Check Telegram and try again.', 'Kode salah. Periksa Telegram lalu coba lagi.'],
         INVALID_PASSWORD: ['Incorrect Telegram password. Please try again.', 'Kata sandi Telegram salah. Silakan coba lagi.'],
-        INVALID_PIN: [t('wrongPin'), t('wrongPin')],
+        INVALID_PIN: ['Incorrect phone number or PIN. Please try again.', 'Nomor atau PIN salah. Silakan coba lagi.'],
         LOGIN_EXPIRED: ['This code has expired. Enter your number to request a new one.', 'Kode kedaluwarsa. Masukkan nomor untuk meminta kode baru.'],
         INVALID_PHASE: ['Start again to request a new Telegram code.', 'Mulai lagi untuk meminta kode Telegram baru.'],
         TOO_MANY_ATTEMPTS: ['Too many attempts. Please wait before trying again.', 'Terlalu banyak percobaan. Tunggu sebelum mencoba lagi.'],
@@ -88,7 +103,7 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
         LOGIN_BUSY: ['Verification is already in progress. Please try again shortly.', 'Verifikasi sedang berjalan. Silakan coba lagi sebentar.'],
       };
       setError(messages[cause.code ?? '']?.[en ? 0 : 1] ?? (en ? 'Unable to sign in. Please try again.' : 'Tidak dapat masuk. Silakan coba lagi.'));
-      if (['LOGIN_EXPIRED', 'INVALID_PHASE', 'TOO_MANY_ATTEMPTS', 'FLOOD_WAIT', 'TELEGRAM_UNAVAILABLE', 'ACCOUNT_MISMATCH'].includes(cause.code ?? '') && step !== 'pin') {
+      if (['LOGIN_EXPIRED', 'INVALID_PHASE', 'TOO_MANY_ATTEMPTS', 'FLOOD_WAIT', 'TELEGRAM_UNAVAILABLE', 'ACCOUNT_MISMATCH'].includes(cause.code ?? '') && method === 'telegram') {
         discardChallenge(); setStep('phone'); setCode(''); setPassword(''); setShowSecret(false);
       }
       if (cause.code === 'INVALID_CODE') setCode('');
@@ -101,13 +116,10 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
     }
   }
 
-  async function requestCode(resend = false) {
-    if (busy || retrySeconds > 0 || (resend && resendSeconds > 0)) return;
-    const normalizedPhone = phone.replace(/[\s()-]/g, '');
-    if (!/^\+[1-9]\d{5,14}$/.test(normalizedPhone)) {
-      setError(en ? 'Include your country code, for example +1 555 123 4567.' : 'Sertakan kode negara, misalnya +62 812 3456 7890.');
-      return;
-    }
+  async function requestCode() {
+    if (busy || telegramRetryUntil > Date.now() || resendUntil > Date.now()) return;
+    const normalizedPhone = normalizePhone();
+    if (!normalizedPhone) return;
     const requestGeneration = ++generation.current;
     const current = () => mounted.current && requestGeneration === generation.current;
     setBusy(true); setError(null);
@@ -119,9 +131,9 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
       const result = await api.telegramStart(normalizedPhone, remember);
       if (!current()) { void api.telegramCancel(result.loginId).catch(() => {}); return; }
       loginId.current = result.loginId;
-      setPhone(normalizedPhone); setCode(''); setPassword(''); setStep('code');
+      setPhone(normalizedPhone); setCode(''); setPassword(''); setPin(''); setShowSecret(false); setStep('code');
       setResendUntil(Date.now() + Math.max(0, result.retryAfter) * 1000);
-    } catch (cause) { if (current()) showError(cause); }
+    } catch (cause) { if (current()) showError(cause, 'telegram'); }
     finally { if (current()) setBusy(false); }
   }
 
@@ -134,7 +146,7 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
     setBusy(true); setError(null);
     try {
       const result = step === 'pin'
-        ? await api.login(pin, remember)
+        ? await api.login(phone, pin, remember)
         : step === 'password'
           ? await api.telegramPassword(loginId.current, password)
           : await api.telegramVerify(loginId.current, code);
@@ -153,31 +165,31 @@ export function LockScreen({ onUnlocked, accountReady = false }: { onUnlocked: (
 
   const title = step === 'code' ? (en ? 'Check your Telegram' : 'Periksa Telegram Anda') : step === 'password' ? (en ? 'Two-step verification' : 'Verifikasi dua langkah') : (en ? 'Sign in to TeleDrive' : 'Masuk ke TeleDrive');
   const description = step === 'phone'
-    ? (en ? 'Enter the phone number connected to your drive. Telegram will send you a verification code.' : 'Masukkan nomor yang terhubung ke drive. Telegram akan mengirim kode verifikasi.')
+    ? (en ? 'Use the same number you signed up with, then choose a Telegram code or your app PIN.' : 'Gunakan nomor saat mendaftar, lalu pilih kode Telegram atau PIN aplikasi Anda.')
     : step === 'code'
       ? (en ? `Enter the code Telegram sent to ${phone}. Check the Telegram app on your signed-in devices.` : `Masukkan kode yang dikirim Telegram ke ${phone}. Periksa aplikasi Telegram pada perangkat yang sudah masuk.`)
       : step === 'password'
         ? (en ? 'Your Telegram account has two-step verification. Enter your Telegram password to continue.' : 'Akun Telegram Anda menggunakan verifikasi dua langkah. Masukkan kata sandi Telegram untuk melanjutkan.')
-        : (en ? 'Enter the app PIN you created when setting up this drive.' : 'Masukkan PIN aplikasi yang Anda buat saat menyiapkan drive ini.');
+        : (en ? `Enter the app PIN you created for ${phone}.` : `Masukkan PIN aplikasi yang Anda buat untuk ${phone}.`);
   const buttonLabel = step === 'phone' ? (en ? 'Send Telegram code' : 'Kirim kode Telegram') : (en ? 'Sign in' : 'Masuk');
-  const cannotSubmit = busy || retrySeconds > 0 || (step === 'phone' ? !phone.trim() : step === 'code' ? code.length < 4 : step === 'password' ? !password : pin.length < 4);
+  const cannotSubmit = busy || submitRetrySeconds > 0 || (step === 'phone' ? !phone.trim() : step === 'code' ? code.length < 4 : step === 'password' ? !password : pin.length < 4);
 
   return <AuthLayout compact>
     <div className="auth-lock-icon"><CloudMark size={36} /></div>
-    {accountReady && <p className="auth-success" role="status">{en ? 'Your account is ready. Sign in to open your drive.' : 'Akun Anda siap. Masuk untuk membuka drive Anda.'}</p>}
     <h1 className="auth-form-title auth-locked-title">{title}</h1>
     <p className="auth-form-description auth-locked-description">{description}</p>
     <form key={step} className="auth-form" onSubmit={submit} aria-busy={busy}>
-      {busy && <WavyProgress className="auth-operation-progress" label={en ? 'Signing in' : 'Memproses masuk'} />}
+      {busy && <LinearProgress className="auth-operation-progress" label={en ? 'Signing in' : 'Memproses masuk'} />}
       {step === 'phone' && <label className="auth-field" htmlFor="login-phone"><span>{t('phoneLabel')}</span><input id="login-phone" name="phone" type="tel" placeholder={en ? '+1 555 123 4567' : '+62 812 3456 7890'} value={phone} onChange={event => setPhone(event.target.value)} disabled={busy} autoFocus autoComplete="tel" required aria-describedby="login-phone-hint" /><small id="login-phone-hint">{en ? 'Include your country code.' : 'Sertakan kode negara Anda.'}</small></label>}
       {step === 'code' && <label className="auth-field" htmlFor="login-code"><span>{en ? 'Telegram verification code' : 'Kode verifikasi Telegram'}</span><input id="login-code" name="code" className="auth-pin-input" type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus placeholder="00000" value={code} onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 8))} disabled={busy} minLength={4} maxLength={8} required /></label>}
       {(step === 'password' || step === 'pin') && <div className="auth-secret-group"><label className="auth-field" htmlFor="login-secret"><span>{step === 'pin' ? t('enterPin') : t('passwordLabel')}</span><input id="login-secret" name={step === 'pin' ? 'pin' : 'telegramPassword'} className={step === 'pin' ? 'auth-pin-input' : undefined} type={showSecret ? 'text' : 'password'} inputMode={step === 'pin' ? 'numeric' : undefined} value={step === 'pin' ? pin : password} onChange={event => step === 'pin' ? setPin(event.target.value.replace(/\D/g, '')) : setPassword(event.target.value)} disabled={busy} autoFocus autoComplete="current-password" required minLength={step === 'pin' ? 4 : undefined} /></label><label className="auth-choice"><input type="checkbox" checked={showSecret} onChange={event => setShowSecret(event.target.checked)} disabled={busy} />{step === 'pin' ? (en ? 'Show PIN' : 'Tampilkan PIN') : (en ? 'Show password' : 'Tampilkan kata sandi')}</label></div>}
       {(step === 'phone' || step === 'pin') && <label className="auth-choice"><input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} disabled={busy} /><span>{en ? 'Remember me for 7 days' : 'Ingat saya selama 7 hari'}</span></label>}
       {error && <p className="auth-error" role="alert">{error}</p>}
-      <MaterialButton type="submit" className="auth-submit" disabled={cannotSubmit} icon={busy ? <AuthSpinner /> : undefined}>{busy ? (step === 'phone' ? (en ? 'Sending code…' : 'Mengirim kode…') : (en ? 'Signing in…' : 'Memproses…')) : retrySeconds > 0 ? (en ? `Try again in ${retrySeconds}s` : `Coba lagi dalam ${retrySeconds}d`) : buttonLabel}</MaterialButton>
-      {step === 'code' && <div className="auth-login-actions"><MaterialButton type="button" variant="text" disabled={busy || resendSeconds > 0 || retrySeconds > 0} onClick={() => void requestCode(true)}>{resendSeconds > 0 ? (en ? `Resend code in ${resendSeconds}s` : `Kirim ulang dalam ${resendSeconds}d`) : (en ? 'Resend code' : 'Kirim ulang kode')}</MaterialButton><MaterialButton type="button" variant="text" disabled={busy} onClick={() => changeStep('phone')}>{en ? 'Edit number' : 'Ubah nomor'}</MaterialButton></div>}
+      <MaterialButton type="submit" className="auth-submit" disabled={cannotSubmit} icon={busy ? <AuthSpinner /> : undefined}>{busy ? (step === 'phone' ? (en ? 'Sending code…' : 'Mengirim kode…') : (en ? 'Signing in…' : 'Memproses…')) : submitRetrySeconds > 0 ? (en ? `Try again in ${submitRetrySeconds}s` : `Coba lagi dalam ${submitRetrySeconds}d`) : buttonLabel}</MaterialButton>
+      {step === 'code' && <div className="auth-login-actions"><MaterialButton type="button" variant="text" disabled={busy || resendSeconds > 0 || retrySeconds > 0} onClick={() => void requestCode()}>{resendSeconds > 0 ? (en ? `Resend code in ${resendSeconds}s` : `Kirim ulang dalam ${resendSeconds}d`) : (en ? 'Resend code' : 'Kirim ulang kode')}</MaterialButton><MaterialButton type="button" variant="text" disabled={busy} onClick={() => changeStep('phone')}>{en ? 'Edit number' : 'Ubah nomor'}</MaterialButton></div>}
       {step === 'password' && <MaterialButton type="button" variant="text" className="auth-back" disabled={busy} onClick={() => changeStep('phone')}>{en ? 'Start again' : 'Mulai lagi'}</MaterialButton>}
-      {(step === 'phone' || step === 'pin') && <MaterialButton type="button" variant="text" className="auth-back" disabled={busy} onClick={() => changeStep(step === 'phone' ? 'pin' : 'phone')}>{step === 'phone' ? (en ? 'Use app PIN instead' : 'Gunakan PIN aplikasi') : (en ? 'Sign in with Telegram' : 'Masuk dengan Telegram')}</MaterialButton>}
+      {step === 'phone' && <MaterialButton type="button" variant="outlined" disabled={busy} onClick={() => changeStep('pin')}>{en ? 'Use app PIN' : 'Gunakan PIN aplikasi'}</MaterialButton>}
+      {step === 'pin' && <div className="auth-login-actions"><MaterialButton type="button" variant="text" disabled={busy || telegramRetryUntil > now || resendSeconds > 0} onClick={() => void requestCode()}>{en ? 'Use a Telegram code' : 'Gunakan kode Telegram'}</MaterialButton><MaterialButton type="button" variant="text" disabled={busy} onClick={() => changeStep('phone')}>{en ? 'Edit number' : 'Ubah nomor'}</MaterialButton></div>}
     </form>
     <p className="auth-card-note">{en ? 'Your existing files and Telegram connection are kept when you sign out.' : 'File dan koneksi Telegram Anda tetap tersimpan saat Anda keluar.'}</p>
   </AuthLayout>;

@@ -153,12 +153,36 @@ test('public login failures preserve active authentication and structured error 
     return response({ error: 'Incorrect verification.', code: 'INVALID_CODE', retryAfter: 30 }, 401, { 'Retry-After': '45' });
   } });
   context.setToken('active-token', true);
-  for (const request of [() => context.api.login('0000'), () => context.api.telegramVerify('pending-login', '00000')]) {
+  for (const request of [() => context.api.login('+15551234567', '0000'), () => context.api.telegramVerify('pending-login', '00000')]) {
     await assert.rejects(request(), error => error instanceof context.ApiError && error.status === 401 && error.code === 'INVALID_CODE' && error.retryAfter === 45 && error.message === 'Incorrect verification.');
     assert.equal(context.getToken(), 'active-token');
   }
   assert.equal(calls.length, 2);
   for (const { init } of calls) assert.equal(new Headers(init.headers).has('Authorization'), false);
+});
+
+test('phone sign-up and PIN sign-in include the phone or verified challenge without sending browser credentials', async () => {
+  const calls = [];
+  const context = load({ fetch: async (url, init) => {
+    calls.push({ url, init, body: JSON.parse(init.body) });
+    return response({ ok: true, token: 'new-token', loginId: 'challenge', needs: 'code', retryAfter: 60 });
+  } });
+  context.setToken('existing-browser-token');
+  await context.api.setupStart('+15551234567');
+  const account = await context.api.setupPin('verified-challenge', '1234', true);
+  await context.api.login('+15551234567', '1234', true);
+  await context.api.unlock('+15551234567', '1234');
+  await context.api.setupCancel('cancelled-challenge');
+  assert.equal(account.token, 'new-token');
+  assert.deepEqual(calls.map(({ url, body }) => ({ url, body })), [
+    { url: '/api/setup/start', body: { phone: '+15551234567', remember: false } },
+    { url: '/api/setup/pin', body: { loginId: 'verified-challenge', pin: '1234', remember: true } },
+    { url: '/api/auth/login', body: { phone: '+15551234567', pin: '1234', remember: true } },
+    { url: '/api/auth/unlock', body: { phone: '+15551234567', pin: '1234' } },
+    { url: '/api/setup/cancel', body: { loginId: 'cancelled-challenge' } },
+  ]);
+  for (const { init } of calls) assert.equal(new Headers(init.headers).has('Authorization'), false);
+  assert.equal(context.getToken(), 'existing-browser-token');
 });
 
 test('a late upload 401 cannot clear a newer sign-in', async () => {

@@ -1,4 +1,4 @@
-import { appConfigRepo } from '../telegram/runtimeLogin.js';
+import { appConfigRepo, phoneSignupCredentials } from '../telegram/runtimeLogin.js';
 import { createAuthRouter } from '../auth/routes.js';
 import { makeReturningLoginFlow } from '../telegram/returningLogin.js';
 import { makeGramClient } from '../telegram/gramjsLogin.js';
@@ -14,4 +14,5 @@ export const authRouter = createAuthRouter({
   repo: appConfigRepo,
   telegramLogin,
   ephemeralStorage: process.env.EPHEMERAL_STORAGE === 'true',
+  phoneSignupAvailable: () => phoneSignupCredentials() !== null,
 });

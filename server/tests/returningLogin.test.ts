@@ -58,14 +58,14 @@ async function setup(options: { password?: boolean; identity?: string; sendError
 describe('returning Telegram login over HTTP', () => {
   it('proves phone ownership, consumes proof, and keeps saved storage untouched', async () => {
     const c = await setup();
-    expect(await c.session()).toEqual({ authenticated: false, configured: true, account: null });
+    expect(await c.session()).toEqual({ authenticated: false, configured: true, account: null, phoneSignupAvailable: false });
     const started = await c.start();
     expect(started.status).toBe(200);
     expect(started.body).toMatchObject({ needs: 'code', retryAfter: 60 });
     const verified = await c.post('auth/telegram/verify', { loginId: started.body.loginId, code: '12345' });
     expect(verified.status).toBe(200);
     expect(c.tokens.isValidToken(verified.body.token)).toBe(true);
-    expect(await c.session(verified.body.token)).toEqual({ authenticated: true, configured: true, account: { name: 'Test', phone: '15551234567' } });
+    expect(await c.session(verified.body.token)).toEqual({ authenticated: true, configured: true, account: { name: 'Test', phone: '15551234567' }, phoneSignupAvailable: false });
     expect(c.clients[0].session.save).not.toHaveBeenCalled();
     expect(c.clients[0].logOut).toHaveBeenCalledOnce();
     expect(c.clients[0].disconnect).toHaveBeenCalledOnce();
@@ -162,9 +162,9 @@ describe('returning Telegram login over HTTP', () => {
 
   it('supports PIN fallback, expires default sessions, and signs out only the supplied token', async () => {
     const c = await setup();
-    expect((await c.post('auth/login', { pin: '0000' })).body.code).toBe('INVALID_PIN');
-    const first = await c.post('auth/login', { pin: '1234' });
-    const second = await c.post('auth/login', { pin: '1234' });
+    expect((await c.post('auth/login', { phone: '+15551234567', pin: '0000' })).body.code).toBe('INVALID_PIN');
+    const first = await c.post('auth/login', { phone: '+15551234567', pin: '1234' });
+    const second = await c.post('auth/login', { phone: '+15551234567', pin: '1234' });
     await c.post('account/logout', {}, first.body.token);
     expect(c.tokens.isValidToken(first.body.token)).toBe(false);
     expect(c.tokens.isValidToken(second.body.token)).toBe(true);

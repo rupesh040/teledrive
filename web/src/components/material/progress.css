@@ -1,0 +1,45 @@
+.linear-progress {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-primary);
+  flex-shrink: 0;
+}
+.linear-progress[data-active="false"] { visibility: hidden; }
+.linear-progress-indicator {
+  display: block;
+  height: 100%;
+  width: var(--progress-value);
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 300ms var(--md-sys-motion-easing-standard);
+}
+.linear-progress[data-indeterminate="true"] .linear-progress-indicator {
+  width: 40%;
+  animation: progress-slide 1500ms ease-in-out infinite;
+}
+.linear-progress[data-state="error"] { color: var(--md-sys-color-error); }
+.linear-progress[data-active="false"] .linear-progress-indicator { animation: none; }
+.loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: progress-spin 800ms linear infinite;
+}
+@keyframes progress-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(350%); }
+}
+@keyframes progress-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .linear-progress-indicator, .loading-spinner { animation: none !important; transition: none !important; }
+  .linear-progress[data-indeterminate="true"] .linear-progress-indicator { margin-left: 25%; width: 50%; transform: none; }
+}
